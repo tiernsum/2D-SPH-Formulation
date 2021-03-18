@@ -9,7 +9,7 @@ double rho_0 = 1000.0; // Resting density
 double mu = 1.0; // Viscosity
 double g = 9.81; // Acceleration due to gravity
 double h = 0.01; // Radius of influence
-double e = 0.5; // Coefficient of restitution
+double e = 0.8; // Coefficient of restitution
 double dt = 0.0001; // Time-step delta_t = 10^-4
 
 void calcDensity(double* rho, double* x, double h, double m, int N);
@@ -21,13 +21,14 @@ void calcAcceleration(double* a, double* F_p, double* F_v, double* F_g, double* 
 void generateVInit(double* v, double* a, double dt, int N);
 void getNextParticleVel(double* v, double* a, double dt, int N);
 void getNextParticlePos(double* x, double* v, double dt, int N);
+void applyBC(double* x, double* v, double h, double e, int N);
 double scaleMass(double* rho, double rho_0, int N);
 
 int main() {
     
-    int N = 2; // Number of particles
+    int N = 8; // Number of particles
     double m_init = 1.0; // Initialised particle mass
-    // double* x = new double[2 * N](); // Particle velocity array
+    double* x = new double[2 * N](); // Particle velocity array
     double* rho = new double[N](); // Particle density array [rhox0, rhoy0, rhox1, rhoy1]
     double* p = new double[N](); // Particle pressure array
     double* v = new double[2 * N](); // Particle velocity array
@@ -36,17 +37,17 @@ int main() {
     double* F_v = new double[2 * N](); // Viscous force array
     double* F_g = new double[2 * N](); // Gravity force array
     
-    /*
+    
     srand(time(0));
     
     for (int i = 0; i < N; ++i) {
         
-        x[2*i] = (double)rand()/RAND_MAX*0.01 + 0.5;
+        x[2*i] = (double)rand()/RAND_MAX * 0.1 + 0.5;
         
-        x[2*i+1] = (double)rand()/RAND_MAX*0.01 + 0.5;
+        x[2*i+1] = (double)rand()/RAND_MAX * 0.1 + 0.5;
         
     }
-    */
+    
     
     // double x[8] = {0.505, 0.5, 0.515, 0.5, 0.51, 0.45, 0.5, 0.45};
 
@@ -54,11 +55,11 @@ int main() {
     
     // double x[8] = {0.501, 0.50, 0.503, 0.50, 0.505, 0.50, 0.507, 0.50};
     
-    // double x[16] = {0.501, 0.50, 0.503, 0.50, 0.505, 0.50, 0.507, 0.50, 0.501, 0.51, 0.503, 0.51, 0.505, 0.51, 0.507, 0.51};
+    // double x[16] = {0.10, 0.50, 0.20, 0.50, 0.30, 0.50, 0.40, 0.50, 0.50, 0.50, 0.60, 0.50, 0.70, 0.50, 0.80, 0.50};
     
     // double x[2] = {0.50, 0.50};
     
-    double x[4] = {0.5, 0.5, 0.5, h};
+    // double x[4] = {0.5, 0.5, 0.5, h};
     
     cout << "Particle Position Array: " << endl;
     for (int i = 0; i < N; ++i) {
@@ -68,12 +69,14 @@ int main() {
     ofstream vOut("data.txt", ios::out | ios::trunc);
     vOut.precision(10);
     
-    /*
+    
     vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " <<
     x[8] << " " << x[9] << " " << x[10] << " " << x[11] << " " << x[12] << " " << x[13] << " " << x[14] << " " << x[15] << " " << endl;
-    */
     
-    vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << endl;
+    
+    // vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << endl;
+    
+    // vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " << endl;
     
     // First time-step
     calcDensity(rho, x, h, m_init, N);
@@ -95,15 +98,16 @@ int main() {
     getNextParticleVel(v, a, dt, N);
     
     getNextParticlePos(x, v, dt, N);
-    /*
+    
+    
     vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " <<
     x[8] << " " << x[9] << " " << x[10] << " " << x[11] << " " << x[12] << " " << x[13] << " " << x[14] << " " << x[15] << " " << endl;
-    */
     
-    vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << endl;
+    
+    // vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " << endl;
     
     // Remaining time-step
-    for (int t = 1; t < 1000; ++t) {
+    for (int t = 1; t < 1899; ++t) {
         
         calcDensity(rho, x, h, m, N);
     
@@ -128,21 +132,37 @@ int main() {
         calcGravityForce(F_g, rho, g, N);
         
         calcAcceleration(a, F_p, F_v, F_g, rho, N);
-        
-        getNextParticleVel(v, a, dt, N);
         /*
+        cout << "Acceleration (@ next time-step) Array: " << endl;
+        for (int i = 0; i < N; ++i) {
+            cout << a[2*i] << " " << a[2*i+1] << endl;
+        }
+        */
+        getNextParticleVel(v, a, dt, N);
+        
         cout << "Velocity (@ next time-step) Array: " << endl;
         for (int i = 0; i < N; ++i) {
             cout << v[2*i] << " " << v[2*i+1] << endl;
         }
-        */
+        
         getNextParticlePos(x, v, dt, N);
-        /*
+        
+        cout << "Position (@ next time-step) Array: " << endl;
+        for (int i = 0; i < N; ++i) {
+            cout << x[2*i] << " " << x[2*i+1] << endl;
+        }
+        
+        applyBC(x, v, h, e, N);
+        
+        
         vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " <<
         x[8] << " " << x[9] << " " << x[10] << " " << x[11] << " " << x[12] << " " << x[13] << " " << x[14] << " " << x[15] << " " << endl;
-        */
         
-        vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << endl;
+        
+        // vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << endl;
+        
+        // vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " << endl;
+        
     }
     
     vOut.close();
@@ -180,32 +200,11 @@ int main() {
     for (int i = 0; i < N; ++i) {
         cout << v[2*i] << " " << v[2*i+1] << endl;
     }
-    */
+    
     cout << "Position (@ next time-step) Array: " << endl;
     for (int i = 0; i < N; ++i) {
         cout << x[2*i] << " " << x[2*i+1] << endl;
     }
-    
-    /*
-    ofstream vOut("data.txt", ios::out | ios::trunc);
-    vOut.precision(5);
-    
-    for (int i = 0; i < 100; ++i) {
-        
-        calcDensity(rho, x, h, m, N);
-        double m = scaleMass(rho, rho_0, N);
-        calcPressure(p, k, rho, rho_0, N);
-        calcPressureForce(F_p, p, x, rho, h, m, N);
-        calcViscousForce(F_v, v, x, rho, h, m, mu, N);
-        calcGravityForce(F_g, rho, g, N);
-        calcAcceleration(a, F_p, F_v, F_g, rho, N);
-        getNextParticleVel(v, a, dt, N);
-        getNextParticlePos(x, v, dt, N);
-        
-        vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " << endl;
-    }
-    
-    vOut.close();
     */
     
     delete[] rho;
@@ -454,6 +453,42 @@ void getNextParticlePos(double* x, double* v, double dt, int N) {
         x[2*i] += v[2*i] * dt;
         
         x[2*i+1] += v[2*i+1] * dt;
+        
+    }
+    
+}
+
+void applyBC(double* x, double* v, double h, double e, int N) {
+    
+    for (int i = 0; i < N; ++i) {
+        
+        if (x[2*i] < h) {
+            
+            x[2*i] = h;
+            
+            v[2*i] *= -e; 
+            
+        } else if (x[2*i] > (1 - h)) {
+            
+            x[2*i] = 1 - h;
+            
+            v[2*i] *= -e;
+            
+        }
+        
+        if (x[2*i+1] < h) {
+            
+            x[2*i+1] = h;
+            
+            v[2*i+1] *= -e; 
+            
+        } else if (x[2*i+1] > (1 - h)) {
+            
+            x[2*i+1] = 1 - h;
+            
+            v[2*i+1] *= -e;
+            
+        }
         
     }
     
