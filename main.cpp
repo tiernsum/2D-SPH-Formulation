@@ -2,33 +2,35 @@
 #include <fstream>
 #include <iomanip>
 #include <cmath>
+#include "cblas.h"
+#include "mpi.h"
 using namespace std;
 
-double k = 2000.0; // Gas constant
-double rho_0 = 1000.0; // Resting density
-double mu = 1.0; // Viscosity
-double g = 9.81; // Acceleration due to gravity
-double h = 0.01; // Radius of influence
-double e = 0.8; // Coefficient of restitution
-double dt = 0.0001; // Time-step delta_t = 10^-4
+const double k = 2000.0; // Gas constant
+const double rho_0 = 1000.0; // Resting density
+const double mu = 1.0; // Viscosity
+const double g = 9.81; // Acceleration due to gravity
+const double h = 0.01; // Radius of influence
+const double e = 0.5; // Coefficient of restitution
+const double dt = 0.0001; // Time-step delta_t = 10^-4
 
-void calcDensity(double* rho, double* x, double h, double m, int N);
-void calcPressure(double* p, double k, double* rho, double rho_0, int N);
-void calcPressureForce(double* F_p, double* x, double* p, double* rho, double h, double m, int N);
-void calcViscousForce(double* F_v, double* x, double* v, double* rho, double mu, double h, double m, int N);
-void calcGravityForce(double* F_g, double* rho, double g, int N);
-void calcAcceleration(double* a, double* F_p, double* F_v, double* F_g, double* rho, int N);
-void generateVInit(double* v, double* a, double dt, int N);
-void getNextParticleVel(double* v, double* a, double dt, int N);
-void getNextParticlePos(double* x, double* v, double dt, int N);
-void applyBC(double* x, double* v, double h, double e, int N);
-double scaleMass(double* rho, double rho_0, int N);
+void calcDensity(double*& rho, double* x, const double& h, const double& m, unsigned const int& N);
+void calcPressure(double*& p, const double& k, double*& rho, const double& rho_0, unsigned const int& N);
+void calcPressureForce(double*& F_p, double* x, double*& p, double*& rho, const double& h, const double& m, unsigned const int& N);
+void calcViscousForce(double*& F_v, double* x, double*& v, double*& rho, const double& mu, const double& h, const double& m, unsigned const int& N);
+void calcGravityForce(double*& F_g, double*& rho, const double& g, unsigned const int& N);
+void calcAcceleration(double*& a, double*& F_p, double*& F_v, double*& F_g, double*& rho, unsigned const int& N);
+void generateVInit(double*& v, double*& a, const double& dt, unsigned const int& N);
+void getNextParticleVel(double*& v, double*& a, const double& dt, unsigned const int& N);
+void getNextParticlePos(double* x, double*& v, const double& dt, unsigned const int& N);
+void applyBC(double* x, double*& v, const double& h, const double& e, unsigned const int& N);
+double scaleMass(double*& rho, const double& rho_0, unsigned const int& N);
 
 int main() {
     
-    int N = 8; // Number of particles
-    double m_init = 1.0; // Initialised particle mass
-    double* x = new double[2 * N](); // Particle velocity array
+    const unsigned int N = 8; // Number of particles
+    const double m_init = 1.0; // Initialised particle mass
+    // double* x = new double[2 * N](); // Particle velocity array
     double* rho = new double[N](); // Particle density array [rhox0, rhoy0, rhox1, rhoy1]
     double* p = new double[N](); // Particle pressure array
     double* v = new double[2 * N](); // Particle velocity array
@@ -37,7 +39,7 @@ int main() {
     double* F_v = new double[2 * N](); // Viscous force array
     double* F_g = new double[2 * N](); // Gravity force array
     
-    
+    /*
     srand(time(0));
     
     for (int i = 0; i < N; ++i) {
@@ -47,7 +49,7 @@ int main() {
         x[2*i+1] = (double)rand()/RAND_MAX * 0.1 + 0.5;
         
     }
-    
+    */
     
     // double x[8] = {0.505, 0.5, 0.515, 0.5, 0.51, 0.45, 0.5, 0.45};
 
@@ -57,15 +59,17 @@ int main() {
     
     // double x[16] = {0.10, 0.50, 0.20, 0.50, 0.30, 0.50, 0.40, 0.50, 0.50, 0.50, 0.60, 0.50, 0.70, 0.50, 0.80, 0.50};
     
+    double x[16] = {0.00, 0.00, 0.10, 0.00, 0.20, 0.00, 0.00, 0.10, 0.10, 0.10, 0.20, 0.10, 0.00, 0.20, 0.20, 0.20};
+    
     // double x[2] = {0.50, 0.50};
     
     // double x[4] = {0.5, 0.5, 0.5, h};
-    
+    /*
     cout << "Particle Position Array: " << endl;
     for (int i = 0; i < N; ++i) {
         cout << x[2*i] << " " << x[2*i+1] << endl;
     }
-    
+    */
     ofstream vOut("data.txt", ios::out | ios::trunc);
     vOut.precision(10);
     
@@ -79,25 +83,37 @@ int main() {
     // vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " << endl;
     
     // First time-step
-    calcDensity(rho, x, h, m_init, N);
+    calcDensity(*&rho, x, h, m_init, N);
     
-    double m = scaleMass(rho, rho_0, N);
+    const double m = scaleMass(*&rho, rho_0, N);
+    
+    calcDensity(*&rho, x, h, m, N);
         
-    calcPressure(p, k, rho, rho_0, N);
+    calcPressure(*&p, k, *&rho, rho_0, N);
     
-    calcPressureForce(F_p, x, p, rho, h, m, N);
+    calcPressureForce(*&F_p, x, *&p, *&rho, h, m, N);
     
-    calcViscousForce(F_v, x, v, rho, mu, h, m, N);
+    calcViscousForce(*&F_v, x, *&v, *&rho, mu, h, m, N);
     
-    calcGravityForce(F_g, rho, g, N);
+    calcGravityForce(*&F_g, *&rho, g, N);
     
-    calcAcceleration(a, F_p, F_v, F_g, rho, N);
+    calcAcceleration(*&a, *&F_p, *&F_v, *&F_g, *&rho, N);
     
-    generateVInit(v, a, dt, N);
+    cout << "Acceleration (@ next time-step) Array: " << endl;
+    for (unsigned int i = 0; i < N; ++i) {
+        cout << a[2*i] << " " << a[2*i+1] << endl;
+    }
     
-    getNextParticleVel(v, a, dt, N);
+    generateVInit(*&v, *&a, dt, N);
     
-    getNextParticlePos(x, v, dt, N);
+    cout << "Velocity (Initialised) Array: " << endl;
+    for (unsigned int i = 0; i < N; ++i) {
+        cout << v[2*i] << " " << v[2*i+1] << endl;
+    }
+    
+    // getNextParticleVel(v, a, dt, N);
+    
+    getNextParticlePos(x, *&v, dt, N);
     
     
     vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " <<
@@ -107,52 +123,52 @@ int main() {
     // vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " << endl;
     
     // Remaining time-step
-    for (int t = 1; t < 1899; ++t) {
+    for (int t = 1; t < 1000; ++t) {
         
-        calcDensity(rho, x, h, m, N);
+        calcDensity(*&rho, x, h, m, N);
     
-        m = scaleMass(rho, rho_0, N);
+        // m = scaleMass(rho, rho_0, N);
             
-        calcPressure(p, k, rho, rho_0, N);
+        calcPressure(*&p, k, *&rho, rho_0, N);
         
-        calcPressureForce(F_p, x, p, rho, h, m, N);
+        calcPressureForce(*&F_p, x, *&p, *&rho, h, m, N);
         /*
         cout << "Pressure Force Array: " << endl;
         for (int i = 0; i < N; ++i) {
             cout << F_p[2*i] << " " << F_p[2*i+1] << endl;
         }
         */
-        calcViscousForce(F_v, x, v, rho, mu, h, m, N);
+        calcViscousForce(*&F_v, x, *&v, *&rho, mu, h, m, N);
         /*
         cout << "Viscous Force Array: " << endl;
         for (int i = 0; i < N; ++i) {
             cout << F_v[2*i] << " " << F_v[2*i+1] << endl;
         }
         */
-        calcGravityForce(F_g, rho, g, N);
+        calcGravityForce(*&F_g, *&rho, g, N);
         
-        calcAcceleration(a, F_p, F_v, F_g, rho, N);
-        /*
+        calcAcceleration(*&a, *&F_p, *&F_v, *&F_g, *&rho, N);
+        
         cout << "Acceleration (@ next time-step) Array: " << endl;
-        for (int i = 0; i < N; ++i) {
+        for (unsigned int i = 0; i < N; ++i) {
             cout << a[2*i] << " " << a[2*i+1] << endl;
         }
-        */
-        getNextParticleVel(v, a, dt, N);
+        
+        getNextParticleVel(*&v, *&a, dt, N);
         
         cout << "Velocity (@ next time-step) Array: " << endl;
-        for (int i = 0; i < N; ++i) {
+        for (unsigned int i = 0; i < N; ++i) {
             cout << v[2*i] << " " << v[2*i+1] << endl;
         }
         
-        getNextParticlePos(x, v, dt, N);
-        
+        getNextParticlePos(x, *&v, dt, N);
+        /*
         cout << "Position (@ next time-step) Array: " << endl;
         for (int i = 0; i < N; ++i) {
             cout << x[2*i] << " " << x[2*i+1] << endl;
         }
-        
-        applyBC(x, v, h, e, N);
+        */
+        applyBC(x, *&v, h, e, N);
         
         
         vOut << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " <<
@@ -208,6 +224,7 @@ int main() {
     */
     
     delete[] rho;
+    // delete[] x;
     delete[] p;
     delete[] v;
     delete[] a;
@@ -219,37 +236,15 @@ int main() {
     
 }
 
-void calcRij(double* r_ij, double* x, int i, int N) {
-    
-    for (int j = 0; j < N; ++j) {
-        
-        r_ij[2*j] = x[2*i] - x[2*j];
-        
-        r_ij[2*j+1] = x[2*i+1] - x[2*j+1];
-        
-    }
-    
-}
-
-void calcQ(double* r_ij, double* q, double h, int N) {
-    
-    for (int i = 0; i < N; ++i) {
-        
-        q[i] = sqrt((r_ij[2*i]*r_ij[2*i] + r_ij[2*i+1]*r_ij[2*i+1]) / h);
-        
-    }
-    
-}
-
-void calcDensity(double* rho, double* x, double h, double m, int N) {
+void calcDensity(double*& rho, double* x, const double& h, const double& m, unsigned const int& N) {
     
     double* r_ij = new double[2*N];
     double* q = new double[N];
     
-    for (int i = 0; i < N; ++i) {
+    for (unsigned int i = 0; i < N; ++i) {
         
         // Compute r_ij
-        for (int j = 0; j < N; ++j) {
+        for (unsigned int j = 0; j < N; ++j) {
             
             r_ij[2*j] = x[2*i] - x[2*j];
         
@@ -258,14 +253,14 @@ void calcDensity(double* rho, double* x, double h, double m, int N) {
         }
         
         // Compute q
-        for (int k = 0; k < N; ++k) {
+        for (unsigned int k = 0; k < N; ++k) {
             
             q[k] = sqrt((r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h);
             
         }
         
         // Compute rho_i
-        for (int j = 0; j < N; ++j) {
+        for (unsigned int j = 0; j < N; ++j) {
             
             if (q[j] < 1.0) {
                 
@@ -284,9 +279,9 @@ void calcDensity(double* rho, double* x, double h, double m, int N) {
     
 }
 
-void calcPressure(double* p, double k, double* rho, double rho_0, int N) {
+void calcPressure(double*& p, const double& k, double*& rho, const double& rho_0, unsigned const int& N) {
     
-    for (int i = 0; i < N; ++i) {
+    for (unsigned int i = 0; i < N; ++i) {
       
         p[i] = k * (rho[i] - rho_0);
         
@@ -294,15 +289,15 @@ void calcPressure(double* p, double k, double* rho, double rho_0, int N) {
    
 }
 
-void calcPressureForce(double* F_p, double* x, double* p, double* rho, double h, double m, int N) {
+void calcPressureForce(double*& F_p, double* x, double*& p, double*& rho, const double& h, const double& m, unsigned const int& N) {
     
     double* r_ij = new double[2*N];
     double* q = new double[N];
     
-    for (int i = 0; i < N; ++i) {
+    for (unsigned int i = 0; i < N; ++i) {
         
         // Compute r_ij
-        for (int j = 0; j < N; ++j) {
+        for (unsigned int j = 0; j < N; ++j) {
             
             r_ij[2*j] = x[2*i] - x[2*j];
         
@@ -311,14 +306,14 @@ void calcPressureForce(double* F_p, double* x, double* p, double* rho, double h,
         }
         
         // Compute q
-        for (int k = 0; k < N; ++k) {
+        for (unsigned int k = 0; k < N; ++k) {
             
             q[k] = sqrt((r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h);
             
         }
         
         // Compute F^p_i
-        for (int j = 0; j < N; ++j) {
+        for (unsigned int j = 0; j < N; ++j) {
             
             if (q[j] < 1.0 && i != j) {
                 
@@ -339,16 +334,16 @@ void calcPressureForce(double* F_p, double* x, double* p, double* rho, double h,
     
 }
 
-void calcViscousForce(double* F_v, double* x, double* v, double* rho, double mu, double h, double m, int N) {
+void calcViscousForce(double*& F_v, double* x, double*& v, double*& rho, const double& mu, const double& h, const double& m, unsigned const int& N) {
     
     double* r_ij = new double[2*N];
     double* v_ij = new double[2*N];
     double* q = new double[N];
     
-    for (int i = 0; i < N; ++i) {
+    for (unsigned int i = 0; i < N; ++i) {
         
         // Compute r_ij
-        for (int j = 0; j < N; ++j) {
+        for (unsigned int j = 0; j < N; ++j) {
             
             r_ij[2*j] = x[2*i] - x[2*j];
         
@@ -357,7 +352,7 @@ void calcViscousForce(double* F_v, double* x, double* v, double* rho, double mu,
         }
         
         // Compute v_ij
-        for (int l = 0; l < N; ++l) {
+        for (unsigned int l = 0; l < N; ++l) {
             
             v_ij[2*l] = v[2*i] - v[2*l];
         
@@ -366,14 +361,14 @@ void calcViscousForce(double* F_v, double* x, double* v, double* rho, double mu,
         }
         
         // Compute q
-        for (int k = 0; k < N; ++k) {
+        for (unsigned int k = 0; k < N; ++k) {
             
             q[k] = sqrt((r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h);
             
         }
         
         // Compute F^v_i
-        for (int j = 0; j < N; ++j) {
+        for (unsigned int j = 0; j < N; ++j) {
             
             if (q[j] < 1.0 && i != j) {
                 
@@ -398,9 +393,9 @@ void calcViscousForce(double* F_v, double* x, double* v, double* rho, double mu,
     
 }
 
-void calcGravityForce(double* F_g, double* rho, double g, int N) {
+void calcGravityForce(double*& F_g, double*& rho, const double& g, unsigned const int& N) {
     
-    for (int i = 0; i < N; ++i) {
+    for (unsigned int i = 0; i < N; ++i) {
         
         F_g[2*i] = 0.0;
         
@@ -410,9 +405,9 @@ void calcGravityForce(double* F_g, double* rho, double g, int N) {
     
 }
 
-void calcAcceleration(double* a, double* F_p, double* F_v, double* F_g, double* rho, int N) {
+void calcAcceleration(double*& a, double*& F_p, double*& F_v, double*& F_g, double*& rho, unsigned const int& N) {
     
-    for (int i = 0; i < N; ++i) {
+    for (unsigned int i = 0; i < N; ++i) {
         
         a[2*i] = (F_p[2*i] + F_v[2*i] + F_g[2*i]) / rho[i];
         
@@ -422,9 +417,9 @@ void calcAcceleration(double* a, double* F_p, double* F_v, double* F_g, double* 
     
 }
 
-void generateVInit(double* v, double* a, double dt, int N) {
+void generateVInit(double*& v, double*& a, const double& dt, unsigned const int& N) {
     
-    for (int i = 0; i < N; ++i) {
+    for (unsigned int i = 0; i < N; ++i) {
         
         v[2*i] = 0 + (a[2*i] * (dt / 2));
         
@@ -434,9 +429,9 @@ void generateVInit(double* v, double* a, double dt, int N) {
     
 }
 
-void getNextParticleVel(double* v, double* a, double dt, int N) {
+void getNextParticleVel(double*& v, double*& a, const double& dt, unsigned const int& N) {
     
-    for (int i = 0; i < N; ++i) {
+    for (unsigned int i = 0; i < N; ++i) {
         
         v[2*i] += a[2*i] * dt;
         
@@ -446,9 +441,9 @@ void getNextParticleVel(double* v, double* a, double dt, int N) {
     
 }
 
-void getNextParticlePos(double* x, double* v, double dt, int N) {
+void getNextParticlePos(double* x, double*& v, const double& dt, unsigned const int& N) {
     
-    for (int i = 0; i < N; ++i) {
+    for (unsigned int i = 0; i < N; ++i) {
         
         x[2*i] += v[2*i] * dt;
         
@@ -458,9 +453,9 @@ void getNextParticlePos(double* x, double* v, double dt, int N) {
     
 }
 
-void applyBC(double* x, double* v, double h, double e, int N) {
+void applyBC(double* x, double*& v, const double& h, const double& e, unsigned const int& N) {
     
-    for (int i = 0; i < N; ++i) {
+    for (unsigned int i = 0; i < N; ++i) {
         
         if (x[2*i] < h) {
             
@@ -494,11 +489,11 @@ void applyBC(double* x, double* v, double h, double e, int N) {
     
 }
 
-double scaleMass(double* rho, double rho_0, int N) {
+double scaleMass(double*& rho, const double& rho_0, unsigned const int& N) {
     
     double sumRho = 0.0;
     
-    for (int i = 0; i < N; ++i) {
+    for (unsigned int i = 0; i < N; ++i) {
         
         sumRho += rho[i];
         
@@ -507,3 +502,11 @@ double scaleMass(double* rho, double rho_0, int N) {
     return (N * rho_0) / sumRho;
     
 }
+
+
+
+
+
+
+
+
