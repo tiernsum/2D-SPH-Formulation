@@ -4,7 +4,7 @@
 class SPH {
     
 private:
-
+    
     const double k = 2000.0;           // Gas constant
     const double rho_0 = 1000.0;       // Resting density
     const double mu = 1.0;             // Viscosity
@@ -32,6 +32,8 @@ public:
     
     SPH(const unsigned int& numOfParticles, const double& timeStep, const double& finalT, const double& radOfInfl);
     
+    std::ofstream outputPP;
+    
     void getExecCase(unsigned int caseID);
     void calcDensity();
     void calcDensityInit();
@@ -45,9 +47,9 @@ public:
     void getNextParticlePos();
     void applyBC();
     void setCurrT();
-    // void createPPOutputFile();
-    // void writeToPPOutputFile();
-    // void closePPOutputFile();
+    // void createPPOutputFile(std::ofstream& fileName);
+    void writeToPPOutputFile(std::ofstream& fileName);
+    void closePPOutputFile(std::ofstream& fileName);
     
     int getN();
     double scaleMass();

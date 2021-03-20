@@ -55,8 +55,6 @@ SPH::SPH(const unsigned int& numOfParticles, const double& timeStep, const doubl
 
 SPH::~SPH() {
     
-    cout << "Concluding computation..." << endl;
-    
     delete[] rho;
     delete[] x;
     delete[] p;
@@ -70,31 +68,37 @@ SPH::~SPH() {
     
 }
 /*
-void SPH::createPPOutputFile() {
+void SPH::createPPOutputFile(ofstream& fileName) {
     
-    ofstream vOut("data.txt", ios::out | ios::trunc);
-    vOut.precision(10);
-    
-}
-
-void SPH::writeToPPOutputFile() {
-    
-    vOut << 
-    for (unsigned int i = 0; i < N; ++i) {
-        
-        x[i] << " " <<
-        
-    }
-    endl;
-    
-}
-    
-void SPH::closePPOutputFile() {
-    
-    vOut.close();
+    ofstream fileName("particlePosition.txt", ios::out | ios::trunc);
+    fileName.precision(10);
     
 }
 */
+void SPH::writeToPPOutputFile(ofstream& fileName) {
+    
+    if (fileName.is_open()) {
+        /*
+        for (unsigned int i = 0; i < N; ++i) {
+            
+            fileName << x[2*i] << " " << x[2*i+1] << endl;
+            
+        }
+        */
+        
+        // fileName << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " << endl;
+        fileName << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << endl;
+        
+    }
+    
+}
+  
+void SPH::closePPOutputFile(ofstream& fileName) {
+    
+    fileName.close();
+    
+}
+
 int SPH::getN() {
     
     return N;
@@ -153,12 +157,12 @@ void SPH::getExecCase(unsigned int caseID) {
         case 4:
             x[0] = 0.505;
             x[1] = 0.5;
-            x[3] = 0.515;
-            x[4] = 0.5;
-            x[5] = 0.51;
-            x[6] = 0.45;
-            x[7] = 0.5;
-            x[8] = 0.45;
+            x[2] = 0.515;
+            x[3] = 0.5;
+            x[4] = 0.51;
+            x[5] = 0.45;
+            x[6] = 0.5;
+            x[7] = 0.45;
             break;
         
     }
@@ -184,7 +188,7 @@ void SPH::calcDensity() {
         // Compute q
         for (unsigned int k = 0; k < N; ++k) {
             
-            q[k] = sqrt((r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h);
+            q[k] = sqrt(r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h;
             
         }
         
@@ -229,7 +233,7 @@ void SPH::calcDensityInit() {
         // Compute q
         for (unsigned int k = 0; k < N; ++k) {
             
-            q[k] = sqrt((r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h);
+            q[k] = sqrt(r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h;
             
         }
         
@@ -286,7 +290,7 @@ void SPH::calcPressureForce() {
         // Compute q
         for (unsigned int k = 0; k < N; ++k) {
             
-            q[k] = sqrt((r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h);
+            q[k] = sqrt(r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h;
             
         }
         
@@ -341,7 +345,7 @@ void SPH::calcViscousForce() {
         // Compute q
         for (unsigned int k = 0; k < N; ++k) {
             
-            q[k] = sqrt((r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h);
+            q[k] = sqrt(r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h;
             
         }
         

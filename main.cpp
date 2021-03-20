@@ -22,9 +22,13 @@ int main(int argc, char* argv[]) {
     
     // Initialise problem as SPH object
     // SPH(const unsigned int& numOfParticles, const double& timeStep, const double& finalT, const double& radOfInfl)
-    SPH obj1(4, 0.0001, 0.1, 0.01);
+    SPH obj1(4, 0.0001, 10, 0.01);
     
-    // void createPPOutputFile();
+    // ofstream outputPP("output.txt", ios::out | ios::trunc);
+    ofstream outputPP("data.txt", ios::out | ios::trunc);
+    outputPP.precision(10);
+    
+    obj1.writeToPPOutputFile(outputPP);
     
     // Iterate from t = dt to t = T    
     while (obj1.getCurrT() <= obj1.getTotalIntTime()) {
@@ -41,7 +45,7 @@ int main(int argc, char* argv[]) {
         
         obj1.getNextParticlePos();
         
-        // void writeToPPOutputFile();
+        obj1.writeToPPOutputFile(outputPP);
         
         obj1.applyBC();
         
@@ -49,7 +53,9 @@ int main(int argc, char* argv[]) {
         
     }
     
-    // void closePPOutputFile();
+    // obj1.writeToPPOutputFile(outputPP);
+    
+    obj1.closePPOutputFile(outputPP);
     
     return 0;
     
