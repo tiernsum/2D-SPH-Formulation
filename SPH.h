@@ -21,6 +21,7 @@ private:
     double m;
     double* x;
     double* rho;
+    double* rhoInit;
     double* p;
     double* v;
     double* a;
@@ -56,6 +57,9 @@ public:
     double getTotalIntTime();
     double getCurrT();
     double getDeltaT();
+    double calcKineticEnergy();
+    double calcPotentialEnergy();
+    double calcTotalEnergy();
     
     ~SPH();
     

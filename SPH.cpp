@@ -20,6 +20,7 @@ SPH::SPH(const unsigned int& numOfParticles, const double& timeStep, const doubl
     
     x = new double[2 * N]();
     rho = new double[N]();     // Particle density array [rhox0, rhoy0, rhox1, rhoy1]
+    rhoInit = new double[N]();
     p = new double[N]();       // Particle pressure array
     v = new double[2 * N]();   // Particle velocity array
     a = new double[2 * N]();   // Particle velocity array
@@ -28,14 +29,16 @@ SPH::SPH(const unsigned int& numOfParticles, const double& timeStep, const doubl
     F_g = new double[2 * N](); // Gravity force array
     
     getExecCase(N);
-    
+    /*
     cout << "Initialised particle location: " << endl;
     for (unsigned int i = 0; i < N; ++i) {
         cout << x[2*i] << " " << x[2*i+1] << endl;
     }
-    
+    */
     calcDensityInit();
+    cout << "m: " << m << endl;
     m = scaleMass();
+    cout << "m: " << m << endl;
     calcDensity();
     calcPressure();
     calcPressureForce();
@@ -45,17 +48,21 @@ SPH::SPH(const unsigned int& numOfParticles, const double& timeStep, const doubl
     generateVInit();
     getNextParticlePos();
     applyBC();
-    
+    /*
     cout << "Particle Location (@t = dt): " << endl;
     for (unsigned int i = 0; i < N; ++i) {
         cout << x[2*i] << " " << x[2*i+1] << endl;
     }
+    */
+    
+    cout << t << " " << calcKineticEnergy() << " " << calcPotentialEnergy() << " " << calcTotalEnergy() << endl;
     
 }
 
 SPH::~SPH() {
     
     delete[] rho;
+    delete[] rhoInit;
     delete[] x;
     delete[] p;
     delete[] v;
@@ -78,16 +85,17 @@ void SPH::createPPOutputFile(ofstream& fileName) {
 void SPH::writeToPPOutputFile(ofstream& fileName) {
     
     if (fileName.is_open()) {
-        /*
+    /*    
         for (unsigned int i = 0; i < N; ++i) {
             
-            fileName << x[2*i] << " " << x[2*i+1] << endl;
-            
-        }
-        */
-        
+            fileName << x[2*i] << " " << x[2*i+1] << endl;            
+    */  
+        // fileName << x[0] << " " << x[1] << endl;
+        // fileName << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << endl;
+        // fileName << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << endl;
         // fileName << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " << endl;
-        fileName << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << endl;
+        fileName << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " << x[8] << " " << x[9] << " " << x[10] << " " << x[11] << " " << 
+        x[12] << " " << x[13] << " " << x[14] << " " << x[15] << endl;
         
     }
     
@@ -164,6 +172,25 @@ void SPH::getExecCase(unsigned int caseID) {
             x[6] = 0.5;
             x[7] = 0.45;
             break;
+            
+        case 8:
+            x[0] = 0.08;
+            x[1] = 0.05;
+            x[2] = 0.1;
+            x[3] = 0.05;
+            x[4] = 0.125;
+            x[5] = 0.05;
+            x[6] = 0.15;
+            x[7] = 0.07;
+            x[8] = 0.075;
+            x[9] = 0.15;
+            x[10] = 0.1;
+            x[11] = 0.15;
+            x[12] = 0.125;
+            x[13] = 0.15;
+            x[14] = 0.16;
+            x[15] = 0.15;
+            break;
         
     }
     
@@ -205,8 +232,11 @@ void SPH::calcDensity() {
             }
         }
         
-        // cout << rho[i] << endl;
-        
+    }
+    
+    cout << "Density @ t = " << t << ": " << endl;
+    for (int i = 0; i < N; ++i) {
+        cout << rho[i] << endl;
     }
     
     delete[] r_ij;
@@ -242,11 +272,11 @@ void SPH::calcDensityInit() {
             
             if (q[j] < 1.0) {
                 
-                rho[i] += ((4.0 * m_init) / (M_PI * h * h)) * ((1 - (q[j] * q[j])) * (1 - (q[j] * q[j])) * (1 - (q[j] * q[j])));
+                rhoInit[i] += ((4.0 * m_init) / (M_PI * h * h)) * ((1 - (q[j] * q[j])) * (1 - (q[j] * q[j])) * (1 - (q[j] * q[j])));
                 
             } else {
                 
-                rho[i] += 0.0;
+                rhoInit[i] += 0.0;
             }
         }
         
@@ -299,8 +329,8 @@ void SPH::calcPressureForce() {
             
             if (q[j] < 1.0 && i != j) {
                 
-                F_p[2*i] += -((m * (p[i] + p[j])) / (rho[j] * 2.0)) * (((-30.0 * r_ij[2*j]) / (M_PI * h * h * h)) * (((1.0 - q[j]) * (1.0 - q[j])) / q[j]));
-                F_p[2*i+1] += -((m * (p[i] + p[j])) / (rho[j] * 2.0)) * (((-30.0 * r_ij[2*j+1]) / (M_PI * h * h * h)) * (((1.0 - q[j]) * (1.0 - q[j])) / q[j]));
+                F_p[2*i] += ((m * (p[i] + p[j])) / (rho[j] * 2.0)) * (((-30.0 * r_ij[2*j]) / (M_PI * h * h * h)) * (((1.0 - q[j]) * (1.0 - q[j])) / q[j]));
+                F_p[2*i+1] += ((m * (p[i] + p[j])) / (rho[j] * 2.0)) * (((-30.0 * r_ij[2*j+1]) / (M_PI * h * h * h)) * (((1.0 - q[j]) * (1.0 - q[j])) / q[j]));
             
             } else {
             
@@ -308,6 +338,9 @@ void SPH::calcPressureForce() {
                 F_p[2*i+1] += 0.0;
             }
         }
+        
+        F_p[2*i] *= -1.0;
+        F_p[2*i+1] *= -1.0;
         
     }
     
@@ -432,11 +465,11 @@ void SPH::getNextParticlePos() {
         x[2*i+1] += v[2*i+1] * dt;
         
     }
-    
+    /*
     for (unsigned int i = 0; i < N; ++i) {
         cout << x[2*i] << " " << x[2*i+1] << endl;
     }
-    
+    */
 }
 
 void SPH::applyBC() {
@@ -482,12 +515,46 @@ double SPH::scaleMass() {
     
     for (unsigned int i = 0; i < N; ++i) {
         
-        sumRho += rho[i];
+        sumRho += rhoInit[i];
         
     }
     
     scaledMass = (N * rho_0) / sumRho;
     
     return scaledMass;
+    
+}
+
+double SPH::calcKineticEnergy() {
+    
+    double E_k = 0.0;
+    
+    for (unsigned int i = 0; i < N; ++i) {
+        
+        E_k += (v[2*i] * v[2*i]) + v[2*i+1] * v[2*i+1];
+        
+    }
+    
+    return 0.5 * m * E_k;
+    
+}
+
+double SPH::calcPotentialEnergy() {
+    
+    double E_p = 0.0;
+    
+    for (unsigned int i = 0; i < N; ++i) {
+        
+        E_p += x[2*i+1];
+        
+    }
+    
+    return m * g * E_p;
+    
+}
+
+double SPH::calcTotalEnergy() {
+    
+    return calcKineticEnergy() + calcPotentialEnergy();
     
 }

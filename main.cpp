@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
     
     // Initialise problem as SPH object
     // SPH(const unsigned int& numOfParticles, const double& timeStep, const double& finalT, const double& radOfInfl)
-    SPH obj1(4, 0.0001, 10, 0.01);
+    SPH obj1(8, 0.01, 3, 0.01);
     
     // ofstream outputPP("output.txt", ios::out | ios::trunc);
     ofstream outputPP("data.txt", ios::out | ios::trunc);
@@ -41,13 +41,15 @@ int main(int argc, char* argv[]) {
         obj1.calcAcceleration();
         obj1.getNextParticleVel();
         
-        cout << "Particle Location (@t = " << obj1.getCurrT() << "): " << endl;
+        // cout << "Particle Location (@t = " << obj1.getCurrT() << "): " << endl;
         
         obj1.getNextParticlePos();
         
         obj1.writeToPPOutputFile(outputPP);
         
         obj1.applyBC();
+        
+        cout << obj1.getCurrT() << " " << obj1.calcKineticEnergy() << " " << obj1.calcPotentialEnergy() << " " << obj1.calcTotalEnergy() << endl;
         
         obj1.setCurrT();
         
