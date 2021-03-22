@@ -5,32 +5,59 @@
 #include "cblas.h"
 #include "mpi.h"
 #include "SPH.h"
+// #include "SPHwithMPI.h"
 using namespace std;
 
 int main(int argc, char* argv[]) {
     
     /*
-    cout << argc << endl;
+    int numOfProcessors, currRank, localN, startN, endN;
     
-    for (int i = 0; i < argc; ++i) {
+    MPI_Init(&argc, &argv);
+    
+    MPI_Comm_size(MPI_COMM_WORLD, &numOfProcessors);
+    MPI_Comm_rank(MPI_COMM_WORLD, &currRank);
+    
+    cout << "" << endl;
+    cout << "Number of Processors: " << numOfProcessors << endl;
+    cout << "Current Rank: " << currRank << endl;
+    
+    // cout << argc << endl;
+    
+    // for (int i = 0; i < argc; ++i) {
         
-        cout << argv[i] << endl;
-    }
-    */
+    //     cout << argv[i] << endl;
+    // }
     
-    // double x[16] = {0.00, 0.00, 0.10, 0.00, 0.20, 0.00, 0.00, 0.10, 0.10, 0.10, 0.20, 0.10, 0.00, 0.20, 0.20, 0.20};
+    cout << "MPI Process Initiated..." << endl;
     
     // Initialise problem as SPH object
     // SPH(const unsigned int& numOfParticles, const double& timeStep, const double& finalT, const double& radOfInfl)
-    SPH obj1(8, 0.01, 3, 0.01);
+    SPHwithMPI obj1(4, 0.0001, 1, 0.01);
     
-    // ofstream outputPP("output.txt", ios::out | ios::trunc);
+    localN = obj1.getN() / numOfProcessors;
+    
+    cout << "Local N: " << localN << endl;
+    
+    obj1.iterWithMPI(localN, numOfProcessors, currRank);
+    
+    MPI_Finalize();
+    
+    cout << "MPI Process Terminated..." << endl;
+    */
+    
+    SPH obj1(12, 0.001, 10, 0.01);
+    // SPH obj1(2, 0.0001, 0.001, 0.01);
+    
     ofstream outputPP("data.txt", ios::out | ios::trunc);
+    // ofstream outputPP("allEnergy.txt", ios::out | ios::trunc);
     outputPP.precision(10);
     
     obj1.writeToPPOutputFile(outputPP);
     
-    // Iterate from t = dt to t = T    
+    // Iterate from t = dt to t = T  
+    obj1.iterate(outputPP);
+    /*
     while (obj1.getCurrT() <= obj1.getTotalIntTime()) {
         
         obj1.calcDensity();
@@ -47,17 +74,19 @@ int main(int argc, char* argv[]) {
         
         obj1.writeToPPOutputFile(outputPP);
         
-        obj1.applyBC();
+        // obj1.applyBC();
         
-        cout << obj1.getCurrT() << " " << obj1.calcKineticEnergy() << " " << obj1.calcPotentialEnergy() << " " << obj1.calcTotalEnergy() << endl;
+        // cout << obj1.getCurrT() << " " << obj1.calcKineticEnergy() << " " << obj1.calcPotentialEnergy() << " " << obj1.calcTotalEnergy() << endl;
         
         obj1.setCurrT();
         
     }
+    */
     
-    // obj1.writeToPPOutputFile(outputPP);
+    obj1.writeToPPOutputFile(outputPP);
     
     obj1.closePPOutputFile(outputPP);
+    
     
     return 0;
     

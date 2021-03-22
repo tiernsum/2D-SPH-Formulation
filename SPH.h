@@ -28,6 +28,8 @@ private:
     double* F_p;
     double* F_v;
     double* F_g;
+    double* r_ij;
+    double* v_ij;
     
 public:
     
@@ -36,6 +38,8 @@ public:
     std::ofstream outputPP;
     
     void getExecCase(unsigned int caseID);
+    void calcRij(unsigned int i, unsigned int j);
+    void calcVij(unsigned int i, unsigned int j);
     void calcDensity();
     void calcDensityInit();
     void calcPressure();
@@ -46,11 +50,12 @@ public:
     void generateVInit();
     void getNextParticleVel();
     void getNextParticlePos();
-    void applyBC();
+    void applyBC(unsigned int i);
     void setCurrT();
     // void createPPOutputFile(std::ofstream& fileName);
     void writeToPPOutputFile(std::ofstream& fileName);
     void closePPOutputFile(std::ofstream& fileName);
+    void iterate(std::ofstream& fileName);
     
     int getN();
     double scaleMass();
