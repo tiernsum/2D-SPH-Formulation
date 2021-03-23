@@ -9,7 +9,7 @@ using namespace std;
 
 SPH::SPH(const unsigned int& numOfParticles, const double& timeStep, const double& finalT, const double& radOfInfl) {
     
-    cout << "Starting computation..." << endl;
+    // cout << "Starting computation..." << endl;
     
     h = radOfInfl;             // Coefficient of restitution
     dt = timeStep;             // Time-step delta_t = 10^-4
@@ -50,7 +50,8 @@ SPH::~SPH() {
     delete[] F_p;
     delete[] F_v;
     delete[] F_g;
-    cout << "Program Terminated..." << endl;
+    
+    // cout << "Program Terminated..." << endl;
     
 }
 
@@ -88,57 +89,6 @@ void SPH::getExecCase(unsigned int caseID) {
     
     switch(caseID) {
         
-        case 1:
-            x[0] = 0.5;
-            x[1] = 0.5;
-            break;
-            
-        case 2:
-            x[0] = 0.5;
-            x[1] = 0.5;
-            x[2] = 0.5;
-            x[3] = h;
-            break;
-            
-        case 3:
-            x[0] = 0.5;
-            x[1] = 0.5;
-            x[2] = 0.495;
-            x[3] = h;
-            x[4] = 0.505;
-            x[5] = h;
-            break;
-            
-        case 4:
-            x[0] = 0.505;
-            x[1] = 0.5;
-            x[2] = 0.515;
-            x[3] = 0.5;
-            x[4] = 0.51;
-            x[5] = 0.45;
-            x[6] = 0.5;
-            x[7] = 0.45;
-            break;
-        
-        case 8:
-            x[0] = 0.075;
-            x[1] = 0.05;
-            x[2] = 0.1;
-            x[3] = 0.05;
-            x[4] = 0.12;
-            x[5] = 0.05;
-            x[6] = 0.15;
-            x[7] = 0.05;
-            x[8] = 0.075;
-            x[9] = 0.15;
-            x[10] = 0.1;
-            x[11] = 0.15;
-            x[12] = 0.125;
-            x[13] = 0.15;
-            x[14] = 0.15;
-            x[15] = 0.15;
-            break;
-            
         case 900:
             srand(time(0));
             for (unsigned int i = 0; i < 900; ++i) {
@@ -241,16 +191,6 @@ double SPH::scaleMass() {
 void SPH::iterate(ofstream& xCoor, ofstream& energyTxt, ofstream& dataTxt, int localN, unsigned int nProc, int currRank) {
     
     while (getCurrT() <= getTotalIntTime()) {
-        
-        /*for (unsigned int i = 0; i < N; ++i) {
-            
-            rho[i] = 0.0;
-            F_p[2*i] = 0.0;
-            F_p[2*i+1] = 0.0;
-            F_v[2*i] = 0.0;
-            F_v[2*i+1] = 0.0;
-            
-        }*/
         
         calcDensityWithMPI(localN, nProc, currRank);
         calcPressureWithMPI(localN, nProc, currRank);

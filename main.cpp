@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iomanip>
 #include <cmath>
+#include <stdlib.h>
 #include "cblas.h"
 #include "mpi.h"
 #include "SPH.h"
@@ -9,29 +10,63 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
     
-    int numOfProcessors, currRank, localN, startN, endN;
+    int numOfProcessors, currRank, localN, nInput;
+    double dtInput, TInput, hInput;
+    
+    for (unsigned int i = 1; i < argc; ++i) {
+        
+        if (string(argv[i]) == "--ic-dam-break") {
+            
+            nInput = 900;
+            
+        }
+        
+        if (string(argv[i]) == "--ic-block-drop") {
+            
+            nInput = 1200;
+            
+        }
+        
+        if (string(argv[i]) == "--ic-droplet") {
+            
+            nInput = 360;
+            
+        }
+        
+        if (string(argv[i]) == "--dt") {
+            
+            dtInput = atof(argv[i+1]);
+            
+        }
+        
+        if (string(argv[i]) == "--T") {
+            
+            TInput = atof(argv[i+1]);
+            
+        }
+        
+        if (string(argv[i]) == "--h") {
+            
+            hInput = atof(argv[i+1]);
+            
+        }
+        
+    }
     
     MPI_Init(&argc, &argv);
     
     MPI_Comm_size(MPI_COMM_WORLD, &numOfProcessors);
     MPI_Comm_rank(MPI_COMM_WORLD, &currRank);
     
-    cout << "" << endl;
-    cout << "Number of Processors: " << numOfProcessors << endl;
-    cout << "Current Rank: " << currRank << endl;
+    // cout << "" << endl;
+    // cout << "Number of Processors: " << numOfProcessors << endl;
+    // cout << "Current Rank: " << currRank << endl;
     
-    // cout << argc << endl;
-    
-    // for (int i = 0; i < argc; ++i) {
-        
-    //     cout << argv[i] << endl;
-    // }
-    
-    cout << "MPI Process Initiated..." << endl;
+    // cout << "MPI Process Initiated..." << endl;
     
     // Initialise problem as SPH object
     // SPH(const unsigned int& numOfParticles, const double& timeStep, const double& finalT, const double& radOfInfl)
-    SPH obj1(1200, 0.001, 1.5, 0.01);
+    SPH obj1(nInput, dtInput, TInput, hInput);
     
     // ofstream outputPP("data.txt", ios::out | ios::trunc);
     ofstream xOut("output.txt", ios::out | ios::trunc);
@@ -58,7 +93,7 @@ int main(int argc, char* argv[]) {
     
     MPI_Finalize();
     
-    cout << "MPI Process Terminated..." << endl;
+    // cout << "MPI Process Terminated..." << endl;
     
     // obj1.writeToPPOutputFile(outputPP);
     
@@ -107,7 +142,7 @@ int main(int argc, char* argv[]) {
     
     obj1.closePPOutputFile(outputPP);
     */
-    
+
     return 0;
     
 }
