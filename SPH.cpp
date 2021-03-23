@@ -16,103 +16,41 @@ SPH::SPH(const unsigned int& numOfParticles, const double& timeStep, const doubl
     T = finalT;
     N = numOfParticles;
     
-    t = dt;
+    t = 0;
     
     x = new double[2 * N]();
-    rho = new double[N]();     // Particle density array [rhox0, rhoy0, rhox1, rhoy1]
-    rhoInit = new double[N]();
-    p = new double[N]();       // Particle pressure array
-    v = new double[2 * N]();   // Particle velocity array
-    a = new double[2 * N]();   // Particle velocity array
-    F_p = new double[2 * N](); // Pressure force array
-    F_v = new double[2 * N](); // Viscous force array
-    F_g = new double[2 * N](); // Gravity force array
+    v = new double[2 * N]();
+    a = new double[2 * N]();
     r_ij = new double[2 * N]();
     v_ij = new double[2 * N]();
+    rho = new double[N]();
+    rhoInit = new double[N]();
+    p = new double[N]();
+    F_p = new double[2 * N]();
+    F_v = new double[2 * N]();
+    F_g = new double[2 * N]();
+    
     
     getExecCase(N);
-    /*
-    cout << "Initialised particle location: " << endl;
-    for (unsigned int i = 0; i < N; ++i) {
-        cout << x[2*i] << " " << x[2*i+1] << endl;
-    }
-    */
+    
     calcDensityInit();
     m = scaleMass();
-    calcDensity();
-    calcPressure();
-    calcPressureForce();
-    calcViscousForce();
-    calcGravityForce();
-    calcAcceleration();
-    generateVInit();
-    getNextParticlePos();
-    // applyBC();
-    /*
-    cout << "Particle Location (@t = dt): " << endl;
-    for (unsigned int i = 0; i < N; ++i) {
-        cout << x[2*i] << " " << x[2*i+1] << endl;
-    }
-    */
-    
-    // cout << t << " " << calcKineticEnergy() << " " << calcPotentialEnergy() << " " << calcTotalEnergy() << endl;
     
 }
 
 SPH::~SPH() {
     
+    delete[] x;
+    delete[] v;
+    delete[] r_ij;
+    delete[] v_ij;
     delete[] rho;
     delete[] rhoInit;
-    delete[] x;
     delete[] p;
-    delete[] v;
-    delete[] a;
     delete[] F_p;
     delete[] F_v;
     delete[] F_g;
-    delete[] r_ij;
-    delete[] v_ij;
-    
     cout << "Program Terminated..." << endl;
-    
-}
-/*
-void SPH::createPPOutputFile(ofstream& fileName) {
-    
-    ofstream fileName("particlePosition.txt", ios::out | ios::trunc);
-    fileName.precision(10);
-    
-}
-*/
-void SPH::writeToPPOutputFile(ofstream& fileName) {
-    
-    if (fileName.is_open()) {
-        /*
-        for (unsigned int i = 0; i < N; ++i) {
-            
-            fileName << x[2*i] << " " << x[2*i+1] << endl;
-            
-        }
-        */
-        
-        // fileName << x[0] << " " << x[1] << endl;
-        // fileName << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << endl;
-        // fileName << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << endl;
-        // fileName << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << endl;
-        // fileName << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " << x[8] << " " << x[9] << " " << x[10] << " " << x[11] << " " << 
-        // x[12] << " " << x[13] << " " << x[14] << " " << x[15] << endl;
-        fileName << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << " " << x[6] << " " << x[7] << " " << x[8] << " " << x[9] << " " << x[10] << " " << x[11] << " " << 
-        x[12] << " " << x[13] << " " << x[14] << " " << x[15] << " " << x[16] << " " << x[17] << " " << x[18] << " " << x[19] << " " << x[20] << " " << x[21] << " " << x[22] << " " << x[23] << endl;
-        
-        // fileName << getCurrT() << " " << calcKineticEnergy() << " " << calcPotentialEnergy() << " " << calcTotalEnergy() << endl;
-        
-    }
-    
-}
-  
-void SPH::closePPOutputFile(ofstream& fileName) {
-    
-    fileName.close();
     
 }
 
@@ -182,27 +120,6 @@ void SPH::getExecCase(unsigned int caseID) {
             x[7] = 0.45;
             break;
         
-        /*
-        case 8:
-            x[0] = 0.075;
-            x[1] = 0.05;
-            x[2] = 0.1;
-            x[3] = 0.05;
-            x[4] = 0.125;
-            x[5] = 0.05;
-            x[6] = 0.15;
-            x[7] = 0.05;
-            x[8] = 0.075;
-            x[9] = 0.15;
-            x[10] = 0.1;
-            x[11] = 0.15;
-            x[12] = 0.125;
-            x[13] = 0.15;
-            x[14] = 0.15;
-            x[15] = 0.15;
-            break;
-        */
-        
         case 8:
             x[0] = 0.075;
             x[1] = 0.05;
@@ -221,211 +138,57 @@ void SPH::getExecCase(unsigned int caseID) {
             x[14] = 0.15;
             x[15] = 0.15;
             break;
-        /*    
-        case 12:
-            x[0] = 0.10;
-            x[1] = 0.30;
-            x[2] = 0.20;
-            x[3] = 0.30;
-            x[4] = 0.30;
-            x[5] = 0.30;
-            x[6] = 0.10;
-            x[7] = 0.40;
-            x[8] = 0.20;
-            x[9] = 0.40;
-            x[10] = 0.30;
-            x[11] = 0.40;
-            x[12] = 0.10;
-            x[13] = 0.49;
-            x[14] = 0.20;
-            x[15] = 0.50;
-            x[16] = 0.30;
-            x[17] = 0.50;
-            x[18] = 0.10;
-            x[19] = 0.60;
-            x[20] = 0.20;
-            x[21] = 0.60;
-            x[22] = 0.33;
-            x[23] = 0.60;
-            break;
-        */
-        
-        case 12:
+            
+        case 900:
             srand(time(0));
-            for (unsigned int i = 0; i < 12; ++i) {
+            for (unsigned int i = 0; i < 900; ++i) {
+                
+                x[2*i] = (double)rand()/RAND_MAX * 0.2;
+        
+                x[2*i+1] = (double)rand()/RAND_MAX * 0.2;
+                
+            }
+            break;
+        
+        case 1200:
+            srand(time(0));
+            for (unsigned int i = 0; i < 1200; ++i) {
                 
                 x[2*i] = (double)rand()/RAND_MAX * 0.2 + 0.1;
         
                 x[2*i+1] = (double)rand()/RAND_MAX * 0.3 + 0.3;
                 
             }
-        
+            break;
+            
+        case 360:
+            srand(time(0));
+            for (unsigned int i = 0; i < 360; ++i) {
+                
+                x[2*i] = (double)rand()/RAND_MAX * 0.1 * cos(i * M_PI / 180.0) + 0.5;
+                
+                x[2*i+1] = (double)rand()/RAND_MAX * 0.1 * sin(i * M_PI / 180.0) + 0.7;
+                
+            }
+            
     }
     
 }
-/*
-void SPH::calcRij(unsigned int i, unsigned int j) {
-    
-    for (unsigned int j = 0; j < N; ++j) {
-        
-        r_ij[2*j] = x[2*i] - x[2*j];
-        
-        r_ij[2*j+1] = x[2*i+1] - x[2*j+1];
-        
-    }
-    
-}
-*/
 
 void SPH::calcRij(unsigned int i, unsigned int j) {
     
-    r_ij[2*j] = x[2*i] - x[2*j];
+    r_ij[2*j] = xLocal[2*i] - x[2*j];
     
-    r_ij[2*j+1] = x[2*i+1] - x[2*j+1];
+    r_ij[2*j+1] = xLocal[2*i+1] - x[2*j+1];
     
 }
 
 void SPH::calcVij(unsigned int i, unsigned int j) {
     
-    v_ij[2*j] = v[2*i] - v[2*j];
+    v_ij[2*j] = vLocal[2*i] - v[2*j];
     
-    v_ij[2*j+1] = v[2*i+1] - v[2*j+1];
+    v_ij[2*j+1] = vLocal[2*i+1] - v[2*j+1];
     
-}
-/*
-void SPH::calcDensity() {
-    
-    // double* r_ij = new double[2*N];
-    double* q = new double[N];
-    
-    for (unsigned int i = 0; i < N; ++i) {
-        
-        // Compute r_ij
-        for (unsigned int j = 0; j < N; ++j) {
-            
-            r_ij[2*j] = x[2*i] - x[2*j];
-        
-            r_ij[2*j+1] = x[2*i+1] - x[2*j+1];
-            
-        }
-        
-        // calcRij(i);
-    
-        // Compute q
-        for (unsigned int k = 0; k < N; ++k) {
-            
-            q[k] = sqrt(r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h;
-            
-        }
-        
-        // Compute rho_i
-        for (unsigned int j = 0; j < N; ++j) {
-            
-            if (q[j] < 1.0) {
-                
-                rho[i] += ((4.0 * m) / (M_PI * h * h)) * ((1 - (q[j] * q[j])) * (1 - (q[j] * q[j])) * (1 - (q[j] * q[j])));
-                
-            } else {
-                
-                rho[i] += 0.0;
-            }
-        }
-        
-        // cout << rho[i] << endl;
-        
-    }
-    
-    
-    cout << "Density at t = " << t << endl;
-    for (unsigned int i = 0; i < N; ++i) {
-        cout << rho[i] << endl;
-    }
-    
-    
-    // delete[] r_ij;
-    delete[] q;
-    
-}
-
-void SPH::calcDensityInit() {
-    
-    // double* r_ij = new double[2*N];
-    double* q = new double[N];
-    
-    for (unsigned int i = 0; i < N; ++i) {
-        
-        // Compute r_ij
-        for (unsigned int j = 0; j < N; ++j) {
-            
-            r_ij[2*j] = x[2*i] - x[2*j];
-        
-            r_ij[2*j+1] = x[2*i+1] - x[2*j+1];
-            
-        }
-      
-        // calcRij(i);
- 
-        // Compute q
-        for (unsigned int k = 0; k < N; ++k) {
-            
-            q[k] = sqrt(r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h;
-            
-        }
-        
-        // Compute rho_i
-        for (unsigned int j = 0; j < N; ++j) {
-            
-            if (q[j] < 1.0) {
-                
-                rhoInit[i] += ((4.0 * m_init) / (M_PI * h * h)) * ((1 - (q[j] * q[j])) * (1 - (q[j] * q[j])) * (1 - (q[j] * q[j])));
-                
-            } else {
-                
-                rhoInit[i] += 0.0;
-            }
-        }
-        
-        // cout << rho[i] << endl;
-        
-    }
-    
-    // delete[] r_ij;
-    delete[] q;
-    
-}
-*/
-
-void SPH::calcDensity() {
-    
-    double q;
-    
-    for (unsigned int i = 0; i < N; ++i) {
-        
-        for (unsigned int j = 0; j < N; ++j) {
-            
-            calcRij(i, j);
-            
-            q = sqrt(r_ij[2*j]*r_ij[2*j] + r_ij[2*j+1]*r_ij[2*j+1]) / h;
-            
-            if (q < 1) {
-                
-                rho[i] += ((4 * m) / (M_PI * h * h)) * ((1 - (q * q)) * (1 - (q * q)) * (1 - (q * q)));
-                
-            } else {
-                
-                rho[i] += 0.0;
-                
-            }
-        
-        }
-        
-    }
-    /*
-    cout << "Density at t = " << t << endl;
-    for (unsigned int i = 0; i < N; ++i) {
-        cout << rho[i] << endl;
-    }
-    */
 }
 
 void SPH::calcDensityInit() {
@@ -436,7 +199,9 @@ void SPH::calcDensityInit() {
         
         for (unsigned int j = 0; j < N; ++j) {
             
-            calcRij(i, j);
+            r_ij[2*j] = x[2*i] - x[2*j];
+    
+            r_ij[2*j+1] = x[2*i+1] - x[2*j+1];
             
             q = sqrt(r_ij[2*j]*r_ij[2*j] + r_ij[2*j+1]*r_ij[2*j+1]) / h;
             
@@ -456,273 +221,748 @@ void SPH::calcDensityInit() {
     
 }
 
-void SPH::calcPressure() {
+double SPH::scaleMass() {
+    
+    double sumRho = 0.0;
+    double scaledMass = 0.0;
     
     for (unsigned int i = 0; i < N; ++i) {
+        
+        sumRho += rhoInit[i];
+        
+    }
+    
+    scaledMass = (N * rho_0) / sumRho;
+    
+    return scaledMass;
+    
+}
+
+void SPH::iterate(ofstream& xCoor, ofstream& energyTxt, ofstream& dataTxt, int localN, unsigned int nProc, int currRank) {
+    
+    while (getCurrT() <= getTotalIntTime()) {
+        
+        /*for (unsigned int i = 0; i < N; ++i) {
+            
+            rho[i] = 0.0;
+            F_p[2*i] = 0.0;
+            F_p[2*i+1] = 0.0;
+            F_v[2*i] = 0.0;
+            F_v[2*i+1] = 0.0;
+            
+        }*/
+        
+        calcDensityWithMPI(localN, nProc, currRank);
+        calcPressureWithMPI(localN, nProc, currRank);
+        calcPressureForceWithMPI(localN, nProc, currRank);
+        calcViscousForceWithMPI(localN, nProc, currRank);
+        calcGravityForceWithMPI(localN, nProc, currRank);
+        
+        if (currRank == 0) {
+            
+            calcAcceleration();
+            
+            if (getCurrT() == 0.0) {
+                generateVInit();
+            } else {
+                getNextParticleVel();
+            }
+            
+            // cout << "Particle Location (@t = " << obj1.getCurrT() << "): " << endl;
+            
+            getNextParticlePos();
+            
+            writeEnergy(energyTxt);
+            
+            writeData(dataTxt);
+            
+        }
+        
+        setCurrT();
+        
+    }
+    
+    writeParticlePosition(xCoor);
+    
+    /*cout << "Position at t = " << t - dt << endl;
+    for (unsigned int i = 0; i < N; ++i) {
+        cout << x[2*i] << " " << x[2*i+1] << endl;
+    }*/
+    
+}
+
+void SPH::calcDensityWithMPI(int localN, unsigned int nProc, int currRank) {
+    
+    MPI_Bcast(x, 2*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        
+    if (currRank == 0){
+            
+        for (unsigned int i = 1; i < nProc; ++i) {
+                
+            startN = i * localN;
+            endN = (i+1) * localN;
+                
+            // cout << "Start N: " << startN << endl;
+            // cout << "End N: " << endN << endl;
+                
+            MPI_Send(&startN, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
+            MPI_Send(&endN, 1, MPI_INT, i, 2, MPI_COMM_WORLD);
+                
+            // cout << "Rank " << currRank << " sends " << startN << endl;
+            // cout << "Rank " << currRank << " sends " << endN << endl;
+             
+        }
+            
+        /*cout << "Particle Location (Rank " << currRank << "): " << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << x[2*i] << " " << x[2*i+1] << endl;
+        }*/
+            
+        xLocal = new double[2 * localN]();
+        rhoLocal = new double[localN]();
+            
+        startN = currRank * localN;
+        endN = (currRank + 1) * localN;
+            
+        // cout << "Start N (Rank 0): " << startN << endl;
+        // cout << "End N (Rank 0): " << endN << endl;
+            
+        for (unsigned int i = 0; i < localN; ++i) {
+                
+            xLocal[2*i] = x[2*(i + startN)];
+            xLocal[2*i+1] = x[2*(i + startN) + 1];
+                
+        }
+            
+        // cout << "Particle Location (Rank " << currRank << "): " << endl;
+        /*for (unsigned int i = 0; i < localN; ++i) {
+            cout << "(Rank " << currRank << ") " << "xLocal[" << i << "] (t = " << t << ") " << xLocal[2*i] << " " << xLocal[2*i+1] << endl;
+        }*/
+            
+        double q;
+    
+        for (unsigned int i = 0; i < localN; ++i) {
+            
+            for (unsigned int j = 0; j < N; ++j) {
+                
+                calcRij(i, j);
+                
+                q = sqrt(r_ij[2*j]*r_ij[2*j] + r_ij[2*j+1]*r_ij[2*j+1]) / h;
+                
+                if (q < 1) {
+                    
+                    rhoLocal[i] += ((4 * m) / (M_PI * h * h)) * ((1 - (q * q)) * (1 - (q * q)) * (1 - (q * q)));
+                    
+                } else {
+                    
+                    rhoLocal[i] += 0.0;
+                    
+                }
+            
+            }
+            
+        }
+        
+        // for (unsigned int i = 0; i < localN; ++i) {
+        //     cout << "(Rank " << currRank << ") " << "rhoLocal[" << i << "] (t = " << t << ") " << rhoLocal[i] << endl;
+        // }
+        
+    } else {
+        
+        MPI_Recv(&startN, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&endN, 1, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            
+        // cout << "Rank " << currRank << " receives " << startN << endl;
+        // cout << "Rank " << currRank << " receives " << endN << endl;
+            
+        /*cout << "Particle Location (Rank " << currRank << "): " << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << x[2*i] << " " << x[2*i+1] << endl;
+        }*/
+            
+        xLocal = new double[2 * localN]();
+        rhoLocal = new double[localN]();
+            
+        startN = currRank * localN;
+        endN = (currRank + 1) * localN;
+            
+        // cout << "Start N (Rank 1): " << startN << endl;
+        // cout << "End N (Rank 1): " << endN << endl;
+            
+        for (unsigned int i = 0; i < localN; ++i) {
+                
+            xLocal[2*i] = x[2*(i + startN)];
+            xLocal[2*i+1] = x[2*(i + startN) + 1];
+                
+        }
+            
+        // cout << "Particle Location (Rank " << currRank << "): " << endl;
+        /*for (unsigned int i = 0; i < localN; ++i) {
+            cout << "(Rank " << currRank << ") " << "xLocal[" << i << "] (t = " << t << ") " << xLocal[2*i] << " " << xLocal[2*i+1] << endl;
+        }*/
+        
+            
+        double q;
+    
+        for (unsigned int i = 0; i < localN; ++i) {
+            
+            for (unsigned int j = 0; j < N; ++j) {
+                
+                calcRij(i, j);
+                
+                q = sqrt(r_ij[2*j]*r_ij[2*j] + r_ij[2*j+1]*r_ij[2*j+1]) / h;
+                
+                if (q < 1) {
+                    
+                    rhoLocal[i] += ((4 * m) / (M_PI * h * h)) * ((1 - (q * q)) * (1 - (q * q)) * (1 - (q * q)));
+                    
+                } else {
+                    
+                    rhoLocal[i] += 0.0;
+                    
+                }
+            
+            }
+            
+        }
+            
+    }
+    
+    MPI_Gather(rhoLocal, localN, MPI_DOUBLE, rho, localN, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        
+    /*if (currRank == 0) {
+        cout << "Particle Density at t = " << t << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << rho[i] << endl;
+        }
+    }*/
+}
+
+void SPH::calcPressureWithMPI(int localN, unsigned int nProc, int currRank) {
+    
+    MPI_Bcast(rho, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        
+    if (currRank == 0){
+            
+        for (unsigned int i = 1; i < nProc; ++i) {
+                
+            startN = i * localN;
+            endN = (i+1) * localN;
+                
+            // cout << "Start N: " << startN << endl;
+            // cout << "End N: " << endN << endl;
+                
+            MPI_Send(&startN, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
+            MPI_Send(&endN, 1, MPI_INT, i, 2, MPI_COMM_WORLD);
+                
+            // cout << "Rank " << currRank << " sends " << startN << endl;
+            // cout << "Rank " << currRank << " sends " << endN << endl;
+             
+        }
+            
+        pLocal = new double[localN]();
+            
+        startN = currRank * localN;
+        endN = (currRank + 1) * localN;
+            
+        // cout << "Start N (Rank 0): " << startN << endl;
+        // cout << "End N (Rank 0): " << endN << endl;
+            
+        for (unsigned int i = 0; i < localN; ++i) {
       
-        p[i] = k * (rho[i] - rho_0);
+            pLocal[i] = k * (rho[i+startN] - rho_0);
+            
+        } 
         
-    } 
-    /*
-    cout << "Pressure at t = " << t << endl;
-    for (unsigned int i = 0; i < N; ++i) {
-        cout << p[i] << endl;
-    }
-    */
-    // cout << "Pressure Calculation Complete..." << endl;
-   
-}
-/*
-void SPH::calcPressureForce() {
-    
-    // double* r_ij = new double[2*N];
-    // double* q = new double[N];
-    double q;
-    
-    for (unsigned int i = 0; i < N; ++i) {
+        // for (unsigned int i = 0; i < localN; ++i) {
+        //     cout << "(Rank " << currRank << ") " << "pLocal[" << i << "] (t = " << t << ") " << pLocal[i] << endl;
+        // }
         
-        // Compute r_ij
-        for (unsigned int j = 0; j < N; ++j) {
-            
-            r_ij[2*j] = x[2*i] - x[2*j];
+    } else {
         
-            r_ij[2*j+1] = x[2*i+1] - x[2*j+1];
+        MPI_Recv(&startN, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&endN, 1, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             
-            cout << "R_ij: " << endl;
-            cout << r_ij[2*j] << " " << r_ij[2*j+1] << endl;
+        // cout << "Rank " << currRank << " receives " << startN << endl;
+        // cout << "Rank " << currRank << " receives " << endN << endl;
             
-        }
-        
-        // calcRij(i);
-        
-        // Compute q
-        for (unsigned int k = 0; k < N; ++k) {
+        pLocal = new double[localN]();
             
-            q[k] = sqrt(r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h;
+        startN = currRank * localN;
+        endN = (currRank + 1) * localN;
             
-            cout << "q: " << q[k] << endl;
+        // cout << "Start N (Rank 1): " << startN << endl;
+        // cout << "End N (Rank 1): " << endN << endl;
             
-        }
-        
-        // Compute F^p_i
-        for (unsigned int j = 0; j < N; ++j) {
+        for (unsigned int i = 0; i < localN; ++i) {
+      
+            pLocal[i] = k * (rho[i+startN] - rho_0);
             
-            r_ij[2*j] = x[2*i] - x[2*j];
-        
-            r_ij[2*j+1] = x[2*i+1] - x[2*j+1];
+        } 
             
-            q = sqrt(r_ij[2*j]*r_ij[2*j] + r_ij[2*j+1]*r_ij[2*j+1]) / h;
-            
-            if (q < 1.0 && i != j) {
-                
-                F_p[2*i] += ((m * (p[i] + p[j])) / (rho[j] * 2.0)) * (((-30.0 * r_ij[2*j]) / (M_PI * h * h * h)) * (((1.0 - q) * (1.0 - q)) / q));
-                F_p[2*i+1] += ((m * (p[i] + p[j])) / (rho[j] * 2.0)) * (((-30.0 * r_ij[2*j+1]) / (M_PI * h * h * h)) * (((1.0 - q) * (1.0 - q)) / q));
-            
-            
-            if (q[j] < 1.0 && i != j) {
-                
-                F_p[2*i] += ((m * (p[i] + p[j])) / (rho[j] * 2.0)) * (((-30.0 * r_ij[2*j]) / (M_PI * h * h * h)) * (((1.0 - q[j]) * (1.0 - q[j])) / q[j]));
-                F_p[2*i+1] += ((m * (p[i] + p[j])) / (rho[j] * 2.0)) * (((-30.0 * r_ij[2*j+1]) / (M_PI * h * h * h)) * (((1.0 - q[j]) * (1.0 - q[j])) / q[j]));
-            
-            } else {
-            
-                F_p[2*i] += 0.0;
-                F_p[2*i+1] += 0.0;
-            }
-        }
-        
-        F_p[2*i] *= -1.0;
-        F_p[2*i+1] *= -1.0;
-        
     }
     
-    
-    cout << "Pressure Force at t = " << t << endl;
-    for (unsigned int i = 0; i < N; ++i) {
-        cout << F_p[2*i] << " " << F_p[2*i+1] << endl;
-    }
-    
-    
-    // delete[] r_ij;
-    // delete[] q;
-    
-}
-*/
-
-void SPH::calcPressureForce() {
-    
-    double q;
-    
-    for (unsigned int i = 0; i < N; ++i) {
+    MPI_Gather(pLocal, localN, MPI_DOUBLE, p, localN, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         
-        for (unsigned int j = 0; j < N; ++j) {
-        
-            calcRij(i, j);
-            
-            // cout << "R_ij at t = " << t << endl;
-            // cout << r_ij[2*j] << " " << r_ij[2*j+1] << endl;
-            
-            q = sqrt(r_ij[2*j]*r_ij[2*j] + r_ij[2*j+1]*r_ij[2*j+1]) / h;
-            
-            // cout << "q = " << q << endl;
-            
-            if (q < 1 && i != j) {
-                
-                F_p[2*i] += ((m / rho[j]) * ((p[i] + p[j]) / 2.0)) * ((-30 / (M_PI * h * h * h)) * (r_ij[2*j]) * (((1 - q) * (1 - q)) / q));
-            
-                F_p[2*i+1] += ((m / rho[j]) * ((p[i] + p[j]) / 2.0)) * ((-30 / (M_PI * h * h * h)) * (r_ij[2*j+1]) * (((1 - q) * (1 - q)) / q));
-                
-            } else {
-                
-                F_p[2*i] += 0.0;
-            
-                F_p[2*i+1] += 0.0;
-                
-            }
-        
+    /*if (currRank == 0) {
+        cout << "Particle Pressure at t = " << t << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << p[i] << endl;
         }
-        
-        F_p[2*i] *= -1.0;
-        F_p[2*i+1] *= -1.0;
-        
-    }
-    /*
-    cout << "Pressure Force at t = " << t << endl;
-    for (unsigned int i = 0; i < N; ++i) {
-        cout << F_p[2*i] << " " << F_p[2*i+1] << endl;
-    }
-    */
-}
-/*
-void SPH::calcViscousForce() {
-    
-    // double* r_ij = new double[2*N];
-    double* v_ij = new double[2*N];
-    double* q = new double[N];
-    
-    for (unsigned int i = 0; i < N; ++i) {
-        
-        // Compute r_ij
-        for (unsigned int j = 0; j < N; ++j) {
-            
-            r_ij[2*j] = x[2*i] - x[2*j];
-        
-            r_ij[2*j+1] = x[2*i+1] - x[2*j+1];
-            
-        }
-       
-        // calcRij(i);
-        
-        // Compute v_ij
-        for (unsigned int l = 0; l < N; ++l) {
-            
-            v_ij[2*l] = v[2*i] - v[2*l];
-        
-            v_ij[2*l+1] = v[2*i+1] - v[2*l+1];
-            
-        }
-        
-        // Compute q
-        for (unsigned int k = 0; k < N; ++k) {
-            
-            q[k] = sqrt(r_ij[2*k]*r_ij[2*k] + r_ij[2*k+1]*r_ij[2*k+1]) / h;
-            
-        }
-        
-        // Compute F^v_i
-        for (unsigned int j = 0; j < N; ++j) {
-            
-            if (q[j] < 1.0 && i != j) {
-                
-                F_v[2*i] += ((m * v_ij[2*j]) / rho[j]) * ((40 / (M_PI * h * h * h * h)) * (1 - q[j]));
-                F_v[2*i+1] += ((m * v_ij[2*j+1]) / rho[j]) * ((40 / (M_PI * h * h * h * h)) * (1 - q[j]));;
-            
-            } else {
-            
-                F_v[2*i] += 0.0;
-                F_v[2*i+1] += 0.0;
-            }
-        }
-        
-        F_v[2*i] *= -mu;
-        F_v[2*i+1] *= -mu;
-        
-    }
-    
-    
-    cout << "Viscous Force at t = " << t << endl;
-    for (unsigned int i = 0; i < N; ++i) {
-        cout << F_v[2*i] << " " << F_v[2*i+1] << endl;
-    }
-    
-    
-    // delete[] r_ij;
-    delete[] v_ij;
-    delete[] q;
-    
-}
-*/
-
-void SPH::calcViscousForce() {
-    
-    double q;
-    
-    for (unsigned int i = 0; i < N; ++i) {
-        
-        for (unsigned int j = 0; j < N; ++j) {
-        
-            calcVij(i, j);
-            
-            calcRij(i, j);
-            
-            q = sqrt(r_ij[2*j]*r_ij[2*j] + r_ij[2*j+1]*r_ij[2*j+1]) / h;
-            
-            if (q < 1 && i != j) {
-                
-                F_v[2*i] += (m / rho[j]) * (v_ij[2*j]) * ((40 / (M_PI * h * h * h * h)) * (1 - q));
-                
-                F_v[2*i+1] += (m / rho[j]) * (v_ij[2*j+1]) * ((40 / (M_PI * h * h * h * h)) * (1 - q));
-                
-            } else {
-                
-                F_v[2*i] += 0.0;
-                
-                F_v[2*i+1] += 0.0;
-                
-            }
-        
-        }
-        
-        F_v[2*i] *= -mu;
-                
-        F_v[2*i+1] *= -mu;
-        
-    }
-    /*
-    cout << "Viscous Force at t = " << t << endl;
-    for (unsigned int i = 0; i < N; ++i) {
-        cout << F_v[2*i] << " " << F_v[2*i+1] << endl;
-    }
-    */
+    }*/
 }
 
-void SPH::calcGravityForce() {
+void SPH::calcPressureForceWithMPI(int localN, unsigned int nProc, int currRank) {
     
-    for (unsigned int i = 0; i < N; ++i) {
+    MPI_Bcast(x, 2*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(rho, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(p, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         
-        F_g[2*i] = 0.0;
+    if (currRank == 0){
+            
+        for (unsigned int i = 1; i < nProc; ++i) {
+                
+            startN = i * localN;
+            endN = (i+1) * localN;
+                
+            // cout << "Start N: " << startN << endl;
+            // cout << "End N: " << endN << endl;
+                
+            MPI_Send(&startN, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
+            MPI_Send(&endN, 1, MPI_INT, i, 2, MPI_COMM_WORLD);
+                
+            // cout << "Rank " << currRank << " sends " << startN << endl;
+            // cout << "Rank " << currRank << " sends " << endN << endl;
+             
+        }
+            
+        /*cout << "Particle Location (Rank " << currRank << "): " << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << x[2*i] << " " << x[2*i+1] << endl;
+        }*/
+            
+        xLocal = new double[2 * localN]();
+        F_pLocal = new double[2 * localN]();
+            
+        startN = currRank * localN;
+        endN = (currRank + 1) * localN;
+            
+        // cout << "Start N (Rank 0): " << startN << endl;
+        // cout << "End N (Rank 0): " << endN << endl;
+            
+        for (unsigned int i = 0; i < localN; ++i) {
+                
+            xLocal[2*i] = x[2*(i + startN)];
+            xLocal[2*i+1] = x[2*(i + startN) + 1];
+                
+        }
+            
+        // cout << "Particle Location (Rank " << currRank << "): " << endl;
+        /*for (unsigned int i = 0; i < localN; ++i) {
+            cout << "(Rank " << currRank << ") " << "xLocal[" << i << "] (t = " << t << ") " << xLocal[2*i] << " " << xLocal[2*i+1] << endl;
+        }*/
+            
+        double q;
+    
+        for (unsigned int i = 0; i < localN; ++i) {
         
-        F_g[2*i+1] = -rho[i] * g;
+            for (unsigned int j = 0; j < N; ++j) {
+            
+                calcRij(i, j);
+                
+                // cout << "(Rank " << currRank << ") R_ij at t = " << t << ": " << r_ij[2*j] << " " << r_ij[2*j+1] << endl;
+                
+                q = sqrt(r_ij[2*j]*r_ij[2*j] + r_ij[2*j+1]*r_ij[2*j+1]) / h;
+                
+                // cout << "(Rank " << currRank << ") q at t = " << t << ": " << q << endl;
+                
+                if (q < 1 && q != 0) {
+                    
+                    // cout << "(Rank: " << currRank << ") Rho[" << j << "] at t = " << t << ": " << rho[j] << endl;
+                    
+                    // cout << "(Rank: " << currRank << ") p[" << j << "] at t = " << t << ": " << p[j] << endl;
+                    
+                    F_pLocal[2*i] += ((m / rho[j]) * ((p[i+startN] + p[j]) / 2.0)) * ((-30 / (M_PI * h * h * h)) * (r_ij[2*j]) * (((1 - q) * (1 - q)) / q));
+                
+                    F_pLocal[2*i+1] += ((m / rho[j]) * ((p[i+startN] + p[j]) / 2.0)) * ((-30 / (M_PI * h * h * h)) * (r_ij[2*j+1]) * (((1 - q) * (1 - q)) / q));
+                    
+                    /*for (unsigned int i = 0; i < localN; ++i) {
+                        cout << "(Rank " << currRank << ") " << "F_p[" << i << "] (t = " << t << ") " << F_p[2*i] << " " << F_p[2*i+1] << endl;
+                    }*/
+                    
+                } else {
+                    
+                    F_pLocal[2*i] += 0.0;
+                
+                    F_pLocal[2*i+1] += 0.0;
+                    
+                }
+            
+            }
+            
+            F_pLocal[2*i] *= -1.0;
+            F_pLocal[2*i+1] *= -1.0;
+            
+        }
         
+        // for (unsigned int i = 0; i < localN; ++i) {
+        //     cout << "(Rank " << currRank << ") " << "F_pLocal[" << i << "] (t = " << t << ") " << F_pLocal[2*i] << " " << F_pLocal[2*i+1] << endl;
+        // }
+        
+    } else {
+        
+        MPI_Recv(&startN, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&endN, 1, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            
+        // cout << "Rank " << currRank << " receives " << startN << endl;
+        // cout << "Rank " << currRank << " receives " << endN << endl;
+            
+        /*cout << "Particle Location (Rank " << currRank << "): " << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << x[2*i] << " " << x[2*i+1] << endl;
+        }*/
+            
+        xLocal = new double[2 * localN]();
+        F_pLocal = new double[2 * localN]();
+            
+        startN = currRank * localN;
+        endN = (currRank + 1) * localN;
+            
+        // cout << "Start N (Rank 1): " << startN << endl;
+        // cout << "End N (Rank 1): " << endN << endl;
+            
+        for (unsigned int i = 0; i < localN; ++i) {
+                
+            xLocal[2*i] = x[2*(i + startN)];
+            xLocal[2*i+1] = x[2*(i + startN) + 1];
+                
+        }
+            
+        // cout << "Particle Location (Rank " << currRank << "): " << endl;
+        /*for (unsigned int i = 0; i < localN; ++i) {
+            cout << "(Rank " << currRank << ") " << "xLocal[" << i << "] (t = " << t << ") " << xLocal[2*i] << " " << xLocal[2*i+1] << endl;
+        }*/
+        
+            
+        double q;
+    
+        for (unsigned int i = 0; i < localN; ++i) {
+        
+            for (unsigned int j = 0; j < N; ++j) {
+            
+                calcRij(i, j);
+                
+                // cout << "(Rank " << currRank << ") R_ij at t = " << t << ": " << r_ij[2*j] << " " << r_ij[2*j+1] << endl;
+                
+                q = sqrt(r_ij[2*j]*r_ij[2*j] + r_ij[2*j+1]*r_ij[2*j+1]) / h;
+                
+                // cout << "(Rank " << currRank << ") q at t = " << t << ": " << q << endl;
+                
+                if (q < 1 && q != 0) {
+                    
+                    // cout << "(Rank: " << currRank << ") Rho[" << j << "] at t = " << t << ": " << rho[j] << endl;
+                    
+                    // cout << "(Rank: " << currRank << ") p[" << j << "] at t = " << t << ": " << p[j] << endl;
+                    
+                    F_pLocal[2*i] += ((m / rho[j]) * ((p[i+startN] + p[j]) / 2.0)) * ((-30 / (M_PI * h * h * h)) * (r_ij[2*j]) * (((1 - q) * (1 - q)) / q));
+                
+                    F_pLocal[2*i+1] += ((m / rho[j]) * ((p[i+startN] + p[j]) / 2.0)) * ((-30 / (M_PI * h * h * h)) * (r_ij[2*j+1]) * (((1 - q) * (1 - q)) / q));
+                    
+                    /*for (unsigned int i = 0; i < localN; ++i) {
+                        cout << "(Rank " << currRank << ") " << "F_p[" << i << "] (t = " << t << ") " << F_p[2*i] << " " << F_p[2*i+1] << endl;
+                    }*/
+                    
+                } else {
+                    
+                    F_pLocal[2*i] += 0.0;
+                
+                    F_pLocal[2*i+1] += 0.0;
+                    
+                }
+            
+            }
+            
+            F_pLocal[2*i] *= -1.0;
+            F_pLocal[2*i+1] *= -1.0;
+            
+        }
+            
     }
     
-    /*
-    cout << "Gravity Force at t = " << t << endl;
-    for (unsigned int i = 0; i < N; ++i) {
-        cout << F_g[2*i] << " " << F_g[2*i+1] << endl;
-    }
-    */
+    MPI_Gather(F_pLocal, 2*localN, MPI_DOUBLE, F_p, 2*localN, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        
+    /*if (currRank == 0) {
+        cout << "Pressure Force at t = " << t << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << F_p[2*i] << " " << F_p[2*i+1] << endl;
+        }
+    }*/
+}
+
+void SPH::calcViscousForceWithMPI(int localN, unsigned int nProc, int currRank) {
     
+    MPI_Bcast(x, 2*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(rho, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(v, 2*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        
+    if (currRank == 0){
+            
+        for (unsigned int i = 1; i < nProc; ++i) {
+                
+            startN = i * localN;
+            endN = (i+1) * localN;
+                
+            // cout << "Start N: " << startN << endl;
+            // cout << "End N: " << endN << endl;
+                
+            MPI_Send(&startN, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
+            MPI_Send(&endN, 1, MPI_INT, i, 2, MPI_COMM_WORLD);
+                
+            // cout << "Rank " << currRank << " sends " << startN << endl;
+            // cout << "Rank " << currRank << " sends " << endN << endl;
+             
+        }
+            
+        /*cout << "Particle Location (Rank " << currRank << "): " << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << x[2*i] << " " << x[2*i+1] << endl;
+        }*/
+            
+        xLocal = new double[2 * localN]();
+        vLocal = new double[2 * localN]();
+        F_vLocal = new double[2 * localN]();
+            
+        startN = currRank * localN;
+        endN = (currRank + 1) * localN;
+            
+        // cout << "Start N (Rank 0): " << startN << endl;
+        // cout << "End N (Rank 0): " << endN << endl;
+            
+        for (unsigned int i = 0; i < localN; ++i) {
+                
+            xLocal[2*i] = x[2*(i + startN)];
+            xLocal[2*i+1] = x[2*(i + startN) + 1];
+            
+            vLocal[2*i] = v[2*(i + startN)];
+            vLocal[2*i+1] = v[2*(i + startN) + 1];
+                
+        }
+            
+        // cout << "Particle Location (Rank " << currRank << "): " << endl;
+        /*for (unsigned int i = 0; i < localN; ++i) {
+            cout << "(Rank " << currRank << ") " << "xLocal[" << i << "] (t = " << t << ") " << xLocal[2*i] << " " << xLocal[2*i+1] << endl;
+            cout << "(Rank " << currRank << ") " << "vLocal[" << i << "] (t = " << t << ") " << vLocal[2*i] << " " << vLocal[2*i+1] << endl;
+        }*/
+            
+        double q;
+    
+        for (unsigned int i = 0; i < localN; ++i) {
+        
+            for (unsigned int j = 0; j < N; ++j) {
+            
+                calcVij(i, j);
+                
+                calcRij(i, j);
+                
+                q = sqrt(r_ij[2*j]*r_ij[2*j] + r_ij[2*j+1]*r_ij[2*j+1]) / h;
+                
+                if (q < 1 && q != 0) {
+                    
+                    F_vLocal[2*i] += (m / rho[j]) * (v_ij[2*j]) * ((40 / (M_PI * h * h * h * h)) * (1 - q));
+                    
+                    F_vLocal[2*i+1] += (m / rho[j]) * (v_ij[2*j+1]) * ((40 / (M_PI * h * h * h * h)) * (1 - q));
+                    
+                } else {
+                    
+                    F_vLocal[2*i] += 0.0;
+                    
+                    F_vLocal[2*i+1] += 0.0;
+                    
+                }
+            
+            }
+            
+            F_vLocal[2*i] *= -mu;
+                    
+            F_vLocal[2*i+1] *= -mu;
+            
+        }
+        
+        // for (unsigned int i = 0; i < localN; ++i) {
+        //     cout << "(Rank " << currRank << ") " << "F_vLocal[" << i << "] (t = " << t << ") " << F_vLocal[2*i] << " " << F_vLocal[2*i+1] << endl;
+        // }
+        
+    } else {
+        
+        MPI_Recv(&startN, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&endN, 1, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            
+        // cout << "Rank " << currRank << " receives " << startN << endl;
+        // cout << "Rank " << currRank << " receives " << endN << endl;
+            
+        /*cout << "Particle Location (Rank " << currRank << "): " << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << x[2*i] << " " << x[2*i+1] << endl;
+        }*/
+            
+        xLocal = new double[2 * localN]();
+        vLocal = new double[2 * localN]();
+        F_vLocal = new double[2 * localN]();
+            
+        startN = currRank * localN;
+        endN = (currRank + 1) * localN;
+            
+        // cout << "Start N (Rank 1): " << startN << endl;
+        // cout << "End N (Rank 1): " << endN << endl;
+            
+        for (unsigned int i = 0; i < localN; ++i) {
+                
+            xLocal[2*i] = x[2*(i + startN)];
+            xLocal[2*i+1] = x[2*(i + startN) + 1];
+            
+            vLocal[2*i] = v[2*(i + startN)];
+            vLocal[2*i+1] = v[2*(i + startN) + 1];
+                
+        }
+            
+        // cout << "Particle Location (Rank " << currRank << "): " << endl;
+        /*for (unsigned int i = 0; i < localN; ++i) {
+            cout << "(Rank " << currRank << ") " << "xLocal[" << i << "] (t = " << t << ") " << xLocal[2*i] << " " << xLocal[2*i+1] << endl;
+        }*/
+        
+            
+        double q;
+    
+        for (unsigned int i = 0; i < localN; ++i) {
+        
+            for (unsigned int j = 0; j < N; ++j) {
+            
+                calcVij(i, j);
+                
+                calcRij(i, j);
+                
+                q = sqrt(r_ij[2*j]*r_ij[2*j] + r_ij[2*j+1]*r_ij[2*j+1]) / h;
+                
+                if (q < 1 && q != 0) {
+                    
+                    F_vLocal[2*i] += (m / rho[j]) * (v_ij[2*j]) * ((40 / (M_PI * h * h * h * h)) * (1 - q));
+                    
+                    F_vLocal[2*i+1] += (m / rho[j]) * (v_ij[2*j+1]) * ((40 / (M_PI * h * h * h * h)) * (1 - q));
+                    
+                } else {
+                    
+                    F_vLocal[2*i] += 0.0;
+                    
+                    F_vLocal[2*i+1] += 0.0;
+                    
+                }
+            
+            }
+            
+            F_vLocal[2*i] *= -mu;
+                    
+            F_vLocal[2*i+1] *= -mu;
+            
+        }
+            
+    }
+    
+    MPI_Gather(F_vLocal, 2*localN, MPI_DOUBLE, F_v, 2*localN, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        
+    /*if (currRank == 0) {
+        cout << "Viscous Force at t = " << t << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << F_v[2*i] << " " << F_v[2*i+1] << endl;
+        }
+    }*/
+}
+
+void SPH::calcGravityForceWithMPI(int localN, unsigned int nProc, int currRank) {
+    
+    MPI_Bcast(rho, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        
+    if (currRank == 0){
+            
+        for (unsigned int i = 1; i < nProc; ++i) {
+                
+            startN = i * localN;
+            endN = (i+1) * localN;
+                
+            // cout << "Start N: " << startN << endl;
+            // cout << "End N: " << endN << endl;
+                
+            MPI_Send(&startN, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
+            MPI_Send(&endN, 1, MPI_INT, i, 2, MPI_COMM_WORLD);
+                
+            // cout << "Rank " << currRank << " sends " << startN << endl;
+            // cout << "Rank " << currRank << " sends " << endN << endl;
+             
+        }
+            
+        /*cout << "Particle Location (Rank " << currRank << "): " << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << x[2*i] << " " << x[2*i+1] << endl;
+        }*/
+            
+        F_gLocal = new double[2 * localN]();
+            
+        startN = currRank * localN;
+        endN = (currRank + 1) * localN;
+            
+        // cout << "Start N (Rank 0): " << startN << endl;
+        // cout << "End N (Rank 0): " << endN << endl;
+            
+        for (unsigned int i = 0; i < localN; ++i) {
+        
+            F_gLocal[2*i] = 0.0;
+            
+            F_gLocal[2*i+1] = -rho[i+startN] * g;
+            
+        }
+        
+        // for (unsigned int i = 0; i < localN; ++i) {
+        //     cout << "(Rank " << currRank << ") " << "F_gLocal[" << i << "] (t = " << t << ") " << F_gLocal[2*i] << " " << F_gLocal[2*i+1] << endl;
+        // }
+        
+    } else {
+        
+        MPI_Recv(&startN, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&endN, 1, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            
+        // cout << "Rank " << currRank << " receives " << startN << endl;
+        // cout << "Rank " << currRank << " receives " << endN << endl;
+            
+        /*cout << "Particle Location (Rank " << currRank << "): " << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << x[2*i] << " " << x[2*i+1] << endl;
+        }*/
+            
+        F_gLocal = new double[2 * localN]();
+            
+        startN = currRank * localN;
+        endN = (currRank + 1) * localN;
+            
+        // cout << "Start N (Rank 1): " << startN << endl;
+        // cout << "End N (Rank 1): " << endN << endl;
+            
+        for (unsigned int i = 0; i < localN; ++i) {
+        
+            F_gLocal[2*i] = 0.0;
+            
+            F_gLocal[2*i+1] = -rho[i+startN] * g;
+            
+        }
+            
+    }
+    
+    MPI_Gather(F_gLocal, 2*localN, MPI_DOUBLE, F_g, 2*localN, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        
+    /*if (currRank == 0) {
+        cout << "Gravity Force at t = " << t << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << F_g[2*i] << " " << F_g[2*i+1] << endl;
+        }
+    }*/
 }
 
 void SPH::calcAcceleration() {
@@ -735,12 +975,12 @@ void SPH::calcAcceleration() {
         
     }
     
-    /*
-    cout << "Acceleration at t = " << t << endl;
+    
+    /*cout << "Acceleration at t = " << t << endl;
     for (unsigned int i = 0; i < N; ++i) {
         cout << a[2*i] << " " << a[2*i+1] << endl;
-    }
-    */
+    }*/
+    
     
 }
 
@@ -766,12 +1006,12 @@ void SPH::getNextParticleVel() {
         
     }
     
-    /*
-    cout << "Velocity at t = " << t << endl;
+    
+    /*cout << "Velocity at t = " << t << endl;
     for (unsigned int i = 0; i < N; ++i) {
         cout << v[2*i] << " " << v[2*i+1] << endl;
-    }
-    */
+    }*/
+    
     
 }
 
@@ -786,12 +1026,12 @@ void SPH::getNextParticlePos() {
         applyBC(i);
         
     }
-    /*
-    cout << "Position at t = " << t << endl;
+    
+    /*cout << "Position at t = " << t << endl;
     for (unsigned int i = 0; i < N; ++i) {
         cout << x[2*i] << " " << x[2*i+1] << endl;
-    }
-    */
+    }*/
+    
 }
 
 void SPH::applyBC(unsigned int i) {
@@ -826,20 +1066,49 @@ void SPH::applyBC(unsigned int i) {
     
 }
 
-double SPH::scaleMass() {
+void SPH::writeParticlePosition(ofstream& xCoor) {
     
-    double sumRho = 0.0;
-    double scaledMass = 0.0;
-    
-    for (unsigned int i = 0; i < N; ++i) {
+    if (xCoor.is_open()) {
         
-        sumRho += rhoInit[i];
+        for (unsigned int i = 0; i < N; ++i) {
+            
+            xCoor << x[2*i] << " " << x[2*i+1] << endl;
+            
+        }
         
     }
     
-    scaledMass = (N * rho_0) / sumRho;
+}
+
+void SPH::writeEnergy(ofstream& energyTxt) {
     
-    return scaledMass;
+    if (energyTxt.is_open()) {
+        
+        energyTxt << getCurrT() << " " << calcKineticEnergy() << " " << calcPotentialEnergy() << " " << calcTotalEnergy() << endl;
+        
+    }
+
+}
+
+void SPH::writeData(ofstream& dataTxt) {
+    
+    if (dataTxt.is_open()) {
+        
+        for (unsigned int i = 0; i < N; ++i) {
+            
+            dataTxt << x[2*i] << " " << x[2*i+1] << " ";
+            
+        }
+        
+        dataTxt << endl;
+        
+    }
+    
+}
+  
+void SPH::closePPOutputFile(ofstream& fileName) {
+    
+    fileName.close();
     
 }
 
@@ -874,48 +1143,5 @@ double SPH::calcPotentialEnergy() {
 double SPH::calcTotalEnergy() {
     
     return calcKineticEnergy() + calcPotentialEnergy();
-    
-}
-
-void SPH::iterate(ofstream& fileName) {
-    
-    while (getCurrT() <= getTotalIntTime()) {
-        
-        for (unsigned int i = 0; i < N; ++i) {
-            
-            rho[i] = 0.0;
-            F_p[2*i] = 0.0;
-            F_p[2*i+1] = 0.0;
-            F_v[2*i] = 0.0;
-            F_v[2*i+1] = 0.0;
-            
-        }
-        
-        calcDensity();
-        calcPressure();
-        calcPressureForce();
-        calcViscousForce();
-        calcGravityForce();
-        calcAcceleration();
-        getNextParticleVel();
-        
-        // cout << "Particle Location (@t = " << obj1.getCurrT() << "): " << endl;
-        
-        getNextParticlePos();
-        
-        writeToPPOutputFile(fileName);
-        
-        // obj1.applyBC();
-        
-        // cout << obj1.getCurrT() << " " << obj1.calcKineticEnergy() << " " << obj1.calcPotentialEnergy() << " " << obj1.calcTotalEnergy() << endl;
-        
-        setCurrT();
-        
-    }
-    
-    cout << "Position at t = " << t - dt << endl;
-    for (unsigned int i = 0; i < N; ++i) {
-        cout << x[2*i] << " " << x[2*i+1] << endl;
-    }
     
 }

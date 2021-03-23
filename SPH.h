@@ -20,42 +20,58 @@ private:
     
     double m;
     double* x;
+    double* xLocal;
     double* rho;
     double* rhoInit;
+    double* rhoLocal;
     double* p;
+    double* pLocal;
     double* v;
+    double* vLocal;
     double* a;
+    double* aLocal;
     double* F_p;
+    double* F_pLocal;
     double* F_v;
+    double* F_vLocal;
     double* F_g;
+    double* F_gLocal;
     double* r_ij;
     double* v_ij;
+    
+    // forMPI
+    int localN;
+    int startN;
+    int endN;
+    int currRank;
     
 public:
     
     SPH(const unsigned int& numOfParticles, const double& timeStep, const double& finalT, const double& radOfInfl);
     
-    std::ofstream outputPP;
+    std::ofstream xOut;
+    std::ofstream energyOut;
     
     void getExecCase(unsigned int caseID);
     void calcRij(unsigned int i, unsigned int j);
     void calcVij(unsigned int i, unsigned int j);
-    void calcDensity();
     void calcDensityInit();
-    void calcPressure();
-    void calcPressureForce();
-    void calcViscousForce();
-    void calcGravityForce();
     void calcAcceleration();
     void generateVInit();
     void getNextParticleVel();
     void getNextParticlePos();
     void applyBC(unsigned int i);
     void setCurrT();
-    // void createPPOutputFile(std::ofstream& fileName);
-    void writeToPPOutputFile(std::ofstream& fileName);
+    void writeParticlePosition(std::ofstream& xCoor);
+    void writeEnergy(std::ofstream& energyTxt);
+    void writeData(std::ofstream& energyTxt);
     void closePPOutputFile(std::ofstream& fileName);
-    void iterate(std::ofstream& fileName);
+    void calcDensityWithMPI(int localN, unsigned int nProc, int currRank);
+    void calcPressureWithMPI(int localN, unsigned int nProc, int currRank);
+    void calcPressureForceWithMPI(int localN, unsigned int nProc, int currRank);
+    void calcViscousForceWithMPI(int localN, unsigned int nProc, int currRank);
+    void calcGravityForceWithMPI(int localN, unsigned int nProc, int currRank);
+    void iterate(std::ofstream& xCoor, std::ofstream& energyTxt, std::ofstream& dataTxt, int localN, unsigned int nProc, int currRank);
     
     int getN();
     double scaleMass();

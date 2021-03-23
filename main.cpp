@@ -5,12 +5,10 @@
 #include "cblas.h"
 #include "mpi.h"
 #include "SPH.h"
-// #include "SPHwithMPI.h"
 using namespace std;
 
 int main(int argc, char* argv[]) {
     
-    /*
     int numOfProcessors, currRank, localN, startN, endN;
     
     MPI_Init(&argc, &argv);
@@ -33,19 +31,41 @@ int main(int argc, char* argv[]) {
     
     // Initialise problem as SPH object
     // SPH(const unsigned int& numOfParticles, const double& timeStep, const double& finalT, const double& radOfInfl)
-    SPHwithMPI obj1(4, 0.0001, 1, 0.01);
+    SPH obj1(1200, 0.001, 1.5, 0.01);
+    
+    // ofstream outputPP("data.txt", ios::out | ios::trunc);
+    ofstream xOut("output.txt", ios::out | ios::trunc);
+    xOut.precision(10);
+    ofstream energyOut("energy.txt", ios::out | ios::trunc);
+    energyOut.precision(10);
+    ofstream dataOut("data.txt", ios::out | ios::trunc);
+    energyOut.precision(10);
     
     localN = obj1.getN() / numOfProcessors;
     
-    cout << "Local N: " << localN << endl;
+    // cout << "Local N: " << localN << endl;
     
-    obj1.iterWithMPI(localN, numOfProcessors, currRank);
+    /*obj1.calcDensityWithMPI(localN, numOfProcessors, currRank);
+    obj1.calcPressureWithMPI(localN, numOfProcessors, currRank);
+    obj1.calcPressureForceWithMPI(localN, numOfProcessors, currRank);
+    obj1.calcViscousForceWithMPI(localN, numOfProcessors, currRank);
+    obj1.calcGravityForceWithMPI(localN, numOfProcessors, currRank);    
+    obj1.calcAcceleration();
+    obj1.generateVInit();
+    obj1.getNextParticlePos();*/
+    
+    obj1.iterate(xOut, energyOut, dataOut, localN, numOfProcessors, currRank);
     
     MPI_Finalize();
     
     cout << "MPI Process Terminated..." << endl;
-    */
     
+    // obj1.writeToPPOutputFile(outputPP);
+    
+    obj1.closePPOutputFile(xOut);
+    obj1.closePPOutputFile(energyOut);
+    
+    /*
     SPH obj1(12, 0.001, 10, 0.01);
     // SPH obj1(2, 0.0001, 0.001, 0.01);
     
@@ -57,7 +77,7 @@ int main(int argc, char* argv[]) {
     
     // Iterate from t = dt to t = T  
     obj1.iterate(outputPP);
-    /*
+    
     while (obj1.getCurrT() <= obj1.getTotalIntTime()) {
         
         obj1.calcDensity();
@@ -81,12 +101,12 @@ int main(int argc, char* argv[]) {
         obj1.setCurrT();
         
     }
-    */
+    
     
     obj1.writeToPPOutputFile(outputPP);
     
     obj1.closePPOutputFile(outputPP);
-    
+    */
     
     return 0;
     
