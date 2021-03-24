@@ -3,8 +3,6 @@
 #include <iomanip>
 #include <cmath>
 #include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
 #include "cblas.h"
 #include "mpi.h"
 #include "SPH.h"
@@ -12,10 +10,6 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
     
-    struct timespec beginReal, endReal, beginCPU, endCPU;
-    clock_gettime(CLOCK_REALTIME, &beginReal);
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &beginCPU);
-        
     int     numOfProcessors, currRank, localN, nInput;
     double  dtInput, TInput, hInput;
     
@@ -25,7 +19,7 @@ int main(int argc, char* argv[]) {
                 nInput = 400;
             }
             if (string(argv[i]) == "--ic-block-drop") {
-                nInput = 652;
+                nInput = 650;
             }
             if (string(argv[i]) == "--ic-droplet") {
                 nInput = 360;
@@ -75,12 +69,10 @@ int main(int argc, char* argv[]) {
         xOut.precision(10);
         ofstream energyOut("energy.txt", ios::out | ios::trunc);
         energyOut.precision(10);
-        ofstream dataOut("data.txt", ios::out | ios::trunc);
-        energyOut.precision(10);
                 
         localN = obj1.getN() / numOfProcessors;
                 
-        obj1.iterate(xOut, energyOut, dataOut, localN, numOfProcessors, currRank);
+        obj1.iterate(xOut, energyOut, localN, numOfProcessors, currRank);
             
         MPI_Finalize();
             
@@ -89,20 +81,6 @@ int main(int argc, char* argv[]) {
     } catch (const logic_error& e) {
         cout << "Error found: " << e.what() << endl;
     }
-    
-    clock_gettime(CLOCK_REALTIME, &endReal);
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &endCPU);
-            
-    long secondsReal = endReal.tv_sec - beginReal.tv_sec;
-    long nanosecondsReal = endReal.tv_nsec - beginReal.tv_nsec;
-    double elapsedReal = secondsReal + nanosecondsReal*1e-9;
-            
-    long secondsCPU = endCPU.tv_sec - beginCPU.tv_sec;
-    long nanosecondsCPU = endCPU.tv_nsec - beginCPU.tv_nsec;
-    double elapsedCPU = secondsCPU + nanosecondsCPU*1e-9;
-            
-    cout << "Elapsed Time (Real): " << elapsedReal << endl;
-    cout << "Elapsed Time (CPU): " << elapsedCPU << endl;
 
     return 0;
     

@@ -274,7 +274,7 @@ double SPH::scaleMass() {
  * @param nProc     - The number of processors available to iterate
  * @param currRank  - The rank of the current processor
  */
-void SPH::iterate(ofstream& xCoor, ofstream& energyTxt, ofstream& dataTxt, unsigned int localN, unsigned int nProc, unsigned int currRank) {
+void SPH::iterate(ofstream& xCoor, ofstream& energyTxt, unsigned int localN, unsigned int nProc, unsigned int currRank) {
     
     // Iterates when the current time-step is less than the final time-step specified
     while (getCurrT() <= getTotalIntTime()) {
@@ -292,8 +292,7 @@ void SPH::iterate(ofstream& xCoor, ofstream& energyTxt, ofstream& dataTxt, unsig
             getNextParticleVel();                           // Calculating the particles' velocity as a result of its acceleration
             getNextParticlePos();                           // Calculating the particles' resulting position
             
-            writeEnergy(energyTxt);                         // Writing the kinetic, potential, and overall energy of the system to "energy.txt"
-            writeData(dataTxt);
+            writeEnergy(energyTxt);
         }
         
         setCurrT();                                         // Updating the current time-step
@@ -872,19 +871,6 @@ void SPH::writeEnergy(ofstream& energyTxt) {
         cout << "Failed to open energy.txt" << endl;
     }
 
-}
-
-void SPH::writeData(ofstream& dataTxt) {
-    
-    if (dataTxt.is_open()) {
-        
-        for (unsigned int i = 0; i < N; ++i) {
-            dataTxt << x[2*i] << " " << x[2*i+1] << " ";
-        }
-        dataTxt << endl;
-        
-    }
-    
 }
 
 /**

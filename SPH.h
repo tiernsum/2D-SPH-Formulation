@@ -66,7 +66,7 @@ public:
     double scaleMass();
     
     // Iterative Algorithm
-    void iterate(std::ofstream& xCoor, std::ofstream& energyTxt, std::ofstream& dataTxt, unsigned int localN, unsigned int nProc, unsigned int currRank);
+    void iterate(std::ofstream& xCoor, std::ofstream& energyTxt, unsigned int localN, unsigned int nProc, unsigned int currRank);
     
     void calcDensityWithMPI(unsigned int localN, unsigned int nProc, unsigned int currRank);
     void calcPressureWithMPI(unsigned int localN, unsigned int nProc, unsigned int currRank);
@@ -89,7 +89,6 @@ public:
     // Writing data to files
     void writeParticlePosition(std::ofstream& xCoor);
     void writeEnergy(std::ofstream& energyTxt);
-    void writeData(std::ofstream& energyTxt);
     void closePPOutputFile(std::ofstream& fileName);
     
     // Getters and Setter
