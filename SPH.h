@@ -39,11 +39,15 @@ private:
     double* r_ij;
     double* v_ij;
     
-    // forMPI
+    // for MPI
     int localN;
     int startN;
     int endN;
     int currRank;
+    
+    int counter;
+    double xCoor;
+    double yCoor;
     
 public:
     
@@ -71,6 +75,7 @@ public:
     void calcPressureForceWithMPI(int localN, unsigned int nProc, int currRank);
     void calcViscousForceWithMPI(int localN, unsigned int nProc, int currRank);
     void calcGravityForceWithMPI(int localN, unsigned int nProc, int currRank);
+    void getNextParticlePosWithMPI(int localN, unsigned int nProc, int currRank);
     void iterate(std::ofstream& xCoor, std::ofstream& energyTxt, std::ofstream& dataTxt, int localN, unsigned int nProc, int currRank);
     
     int getN();

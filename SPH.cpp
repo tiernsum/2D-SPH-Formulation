@@ -16,7 +16,9 @@ SPH::SPH(const unsigned int& numOfParticles, const double& timeStep, const doubl
     T = finalT;
     N = numOfParticles;
     
-    t = 0;
+    t = 0.0;
+    xCoor = 0.0;
+    yCoor = 0.0;
     
     x = new double[2 * N]();
     v = new double[2 * N]();
@@ -89,38 +91,125 @@ void SPH::getExecCase(unsigned int caseID) {
     
     switch(caseID) {
         
-        case 900:
-            srand(time(0));
-            for (unsigned int i = 0; i < 900; ++i) {
-                
-                x[2*i] = (double)rand()/RAND_MAX * 0.2;
-        
-                x[2*i+1] = (double)rand()/RAND_MAX * 0.2;
-                
-            }
+        case 1:
+            x[0] = 0.5;
+            x[1] = 0.5;
+            break;
+            
+        case 2:
+            x[0] = 0.5;
+            x[1] = 0.5;
+            x[2] = 0.5;
+            x[3] = h;
+            break;
+            
+        case 3:
+            x[0] = 0.5;
+            x[1] = 0.5;
+            x[2] = 0.495;
+            x[3] = h;
+            x[4] = 0.505;
+            x[5] = h;
+            break;
+            
+        case 4:
+            x[0] = 0.505;
+            x[1] = 0.5;
+            x[2] = 0.515;
+            x[3] = 0.5;
+            x[4] = 0.51;
+            x[5] = 0.45;
+            x[6] = 0.5;
+            x[7] = 0.45;
             break;
         
-        case 1200:
-            srand(time(0));
-            for (unsigned int i = 0; i < 1200; ++i) {
+        case 400:
+            {
+                srand(time(0));
                 
-                x[2*i] = (double)rand()/RAND_MAX * 0.2 + 0.1;
-        
-                x[2*i+1] = (double)rand()/RAND_MAX * 0.3 + 0.3;
+                xCoor = 0.0;
+                yCoor = 0.01;
                 
+                for (unsigned int i = 0; i < 400; ++i) {
+                        
+                    xCoor += 0.01;
+                    
+                    if (xCoor > 0.21) {
+                        
+                        xCoor = 0.01;
+                        x[2*i] = xCoor;
+                        
+                        yCoor += 0.01;
+                        x[2*i+1] = yCoor;
+                        
+                    } else {
+                        
+                        x[2*i] = xCoor;
+                        x[2*i+1] = yCoor;
+                        
+                    }
+                    
+                    // Adding Noise
+                    
+                    if (i % 10 == 0 && yCoor == 0.01) {
+                    
+                        x[2*i] = (double)rand()/RAND_MAX * 0.02 + 0.18;
+                        x[2*i+1] = (double)rand()/RAND_MAX * 0.02;
+                        
+                    }
+                        
+                    // cout << x[2*i] << " " << x[2*i+1] << endl;
+                        
+                }
+                break;
             }
-            break;
+        
+        case 650:
+            {
+                xCoor = 0.09;
+                yCoor = 0.3;
+                
+                for (unsigned int i = 0; i < 650; ++i) {
+                        
+                    xCoor += 0.01;
+                    
+                    if (xCoor > 0.31) {
+                        
+                        xCoor = 0.1;
+                        x[2*i] = xCoor;
+                        
+                        yCoor += 0.01;
+                        x[2*i+1] = yCoor;
+                        
+                    } else {
+                        
+                        x[2*i] = xCoor;
+                        x[2*i+1] = yCoor;
+                        
+                    }
+                        
+                }
+                break;
+            }
             
         case 360:
-            srand(time(0));
-            for (unsigned int i = 0; i < 360; ++i) {
+            {
+                counter = 1;
+                for (unsigned int i = 0; i < 360; ++i) {
+                    
+                    if (i % 36 == 0 && i != 0) {
+                        counter++;
+                    }
                 
-                x[2*i] = (double)rand()/RAND_MAX * 0.1 * cos(i * M_PI / 180.0) + 0.5;
+                    x[2*i] = counter * 0.01 * cos(i % 36 * 10 * M_PI / 180) + 0.5;
+                    
+                    x[2*i+1] = counter * 0.01 * sin(i % 36 * 10 * M_PI / 180) + 0.7;
+                    
+                    // cout << x[2*i] << " " << x[2*i+1] << endl;
                 
-                x[2*i+1] = (double)rand()/RAND_MAX * 0.1 * sin(i * M_PI / 180.0) + 0.7;
-                
+                }
+                break;
             }
-            
     }
     
 }
@@ -197,16 +286,13 @@ void SPH::iterate(ofstream& xCoor, ofstream& energyTxt, ofstream& dataTxt, int l
         calcPressureForceWithMPI(localN, nProc, currRank);
         calcViscousForceWithMPI(localN, nProc, currRank);
         calcGravityForceWithMPI(localN, nProc, currRank);
+        // getNextParticlePosWithMPI(localN, nProc, currRank);
         
         if (currRank == 0) {
             
             calcAcceleration();
             
-            if (getCurrT() == 0.0) {
-                generateVInit();
-            } else {
-                getNextParticleVel();
-            }
+            getNextParticleVel();
             
             // cout << "Particle Location (@t = " << obj1.getCurrT() << "): " << endl;
             
@@ -222,8 +308,9 @@ void SPH::iterate(ofstream& xCoor, ofstream& energyTxt, ofstream& dataTxt, int l
         
     }
     
-    writeParticlePosition(xCoor);
-    
+    if (currRank == 0) {
+        writeParticlePosition(xCoor);
+    }
     /*cout << "Position at t = " << t - dt << endl;
     for (unsigned int i = 0; i < N; ++i) {
         cout << x[2*i] << " " << x[2*i+1] << endl;
@@ -905,6 +992,192 @@ void SPH::calcGravityForceWithMPI(int localN, unsigned int nProc, int currRank) 
     }*/
 }
 
+void SPH::getNextParticlePosWithMPI(int localN, unsigned int nProc, int currRank) {
+    
+    MPI_Bcast(rho, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(F_p, 2*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(F_v, 2*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(F_g, 2*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    
+    /*MPI_Scatter(rho, localN, MPI_DOUBLE, rhoLocal, localN, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Scatter(F_p, localN, MPI_DOUBLE, F_pLocal, localN, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Scatter(F_v, localN, MPI_DOUBLE, F_vLocal, localN, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Scatter(F_g, localN, MPI_DOUBLE, F_gLocal, localN, MPI_DOUBLE, 0, MPI_COMM_WORLD);*/
+
+    
+    if (currRank == 0){
+            
+        for (unsigned int i = 1; i < nProc; ++i) {
+                
+            startN = i * localN;
+            endN = (i+1) * localN;
+                
+            // cout << "Start N: " << startN << endl;
+            // cout << "End N: " << endN << endl;
+                
+            MPI_Send(&startN, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
+            MPI_Send(&endN, 1, MPI_INT, i, 2, MPI_COMM_WORLD);
+                
+            // cout << "Rank " << currRank << " sends " << startN << endl;
+            // cout << "Rank " << currRank << " sends " << endN << endl;
+             
+        }
+            
+        /*cout << "Particle Location (Rank " << currRank << "): " << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << x[2*i] << " " << x[2*i+1] << endl;
+        }*/
+        
+        aLocal = new double[2 * localN]();
+        vLocal = new double[2 * localN]();
+        xLocal = new double[2 * localN]();
+            
+        startN = currRank * localN;
+        endN = (currRank + 1) * localN;
+            
+        // cout << "Start N (Rank 0): " << startN << endl;
+        // cout << "End N (Rank 0): " << endN << endl;
+            
+        for (unsigned int i = 0; i < localN; ++i) {
+        
+            aLocal[2*i] = (F_p[2*(i+startN)] + F_v[2*(i+startN)] + F_g[2*(i+startN)]) / rho[i+startN];
+            aLocal[2*i+1] = (F_p[2*(i+startN)+1] + F_vLocal[2*(i+startN)+1] + F_g[2*(i+startN)+1]) / rho[(i+startN)];
+            
+            if (getCurrT() == 0.0) {
+                
+                vLocal[2*i] = 0 + (aLocal[2*i] * (dt / 2));
+                vLocal[2*i+1] = 0 + (aLocal[2*i+1] * (dt / 2));
+                
+            } else {
+                
+                vLocal[2*i] += aLocal[2*i] * dt;
+                vLocal[2*i+1] += aLocal[2*i+1] * dt;
+                
+            }
+            
+            xLocal[2*i] += vLocal[2*i] * dt;
+            xLocal[2*i+1] += vLocal[2*i+1] * dt;
+            
+            if (xLocal[2*i] < h) {
+        
+                xLocal[2*i] = h;
+                
+                vLocal[2*i] *= -e;
+                
+            } else if (xLocal[2*i] > (1 - h)) {
+                
+                xLocal[2*i] = 1 - h;
+                
+                vLocal[2*i] *= -e;
+                    
+            }
+                
+            if (xLocal[2*i+1] < h) {
+                    
+                xLocal[2*i+1] = h;
+                    
+                vLocal[2*i+1] *= -e; 
+                    
+            } else if (xLocal[2*i+1] > (1 - h)) {
+                    
+                xLocal[2*i+1] = 1 - h;
+                    
+                vLocal[2*i+1] *= -e;
+                    
+            }
+            
+        }
+        
+        for (unsigned int i = 0; i < localN; ++i) {
+            cout << "(Rank " << currRank << ") " << "aLocal[" << i << "] (t = " << t << ") " << aLocal[2*i] << " " << aLocal[2*i+1] << endl;
+        }
+        
+    } else {
+        
+        MPI_Recv(&startN, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&endN, 1, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            
+        // cout << "Rank " << currRank << " receives " << startN << endl;
+        // cout << "Rank " << currRank << " receives " << endN << endl;
+            
+        /*cout << "Particle Location (Rank " << currRank << "): " << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << x[2*i] << " " << x[2*i+1] << endl;
+        }*/
+            
+        aLocal = new double[2 * localN]();
+        vLocal = new double[2 * localN]();
+        xLocal = new double[2 * localN]();
+            
+        startN = currRank * localN;
+        endN = (currRank + 1) * localN;
+            
+        // cout << "Start N (Rank 0): " << startN << endl;
+        // cout << "End N (Rank 0): " << endN << endl;
+            
+        for (unsigned int i = 0; i < localN; ++i) {
+        
+            aLocal[2*i] = (F_p[2*(i+startN)] + F_v[2*(i+startN)] + F_g[2*(i+startN)]) / rho[i+startN];
+            aLocal[2*i+1] = (F_p[2*(i+startN)+1] + F_vLocal[2*(i+startN)+1] + F_g[2*(i+startN)+1]) / rho[(i+startN)];
+            
+            if (getCurrT() == 0.0) {
+                
+                vLocal[2*i] = 0 + (aLocal[2*i] * (dt / 2));
+                vLocal[2*i+1] = 0 + (aLocal[2*i+1] * (dt / 2));
+                
+            } else {
+                
+                vLocal[2*i] += aLocal[2*i] * dt;
+                vLocal[2*i+1] += aLocal[2*i+1] * dt;
+                
+            }
+            
+            xLocal[2*i] += vLocal[2*i] * dt;
+            xLocal[2*i+1] += vLocal[2*i+1] * dt;
+            
+            if (xLocal[2*i] < h) {
+        
+                xLocal[2*i] = h;
+                
+                vLocal[2*i] *= -e;
+                
+            } else if (xLocal[2*i] > (1 - h)) {
+                
+                xLocal[2*i] = 1 - h;
+                
+                vLocal[2*i] *= -e;
+                    
+            }
+                
+            if (xLocal[2*i+1] < h) {
+                    
+                xLocal[2*i+1] = h;
+                    
+                vLocal[2*i+1] *= -e; 
+                    
+            } else if (xLocal[2*i+1] > (1 - h)) {
+                    
+                xLocal[2*i+1] = 1 - h;
+                    
+                vLocal[2*i+1] *= -e;
+                    
+            }
+            
+        }
+ 
+    }
+    
+    MPI_Gather(vLocal, 2*localN, MPI_DOUBLE, v, 2*localN, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Gather(xLocal, 2*localN, MPI_DOUBLE, x, 2*localN, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        
+    if (currRank == 0) {
+        cout << "Particle Position at t = " << t << endl;
+        for (unsigned int i = 0; i < N; ++i) {
+            cout << x[2*i] << " " << x[2*i+1] << endl;
+        }
+    }
+}
+
 void SPH::calcAcceleration() {
     
     for (unsigned int i = 0; i < N; ++i) {
@@ -938,14 +1211,23 @@ void SPH::generateVInit() {
 
 void SPH::getNextParticleVel() {
     
-    for (unsigned int i = 0; i < N; ++i) {
+    /*for (unsigned int i = 0; i < N; ++i) {
         
         v[2*i] += a[2*i] * dt;
         
         v[2*i+1] += a[2*i+1] * dt;
         
-    }
+    }*/
     
+    if (getCurrT() == 0.0) {
+        
+        cblas_daxpy(2*N, (0.5*dt), a, 1, v, 1);
+        
+    } else {
+        
+        cblas_daxpy(2*N, dt, a, 1, v, 1);
+        
+    }
     
     /*cout << "Velocity at t = " << t << endl;
     for (unsigned int i = 0; i < N; ++i) {
@@ -956,6 +1238,8 @@ void SPH::getNextParticleVel() {
 }
 
 void SPH::getNextParticlePos() {
+    
+    // cblas_daxpy(2*N, dt, v, 1, x, 1);
     
     for (unsigned int i = 0; i < N; ++i) {
         
